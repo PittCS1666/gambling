@@ -22,7 +22,7 @@ School Sanctioned Gambling is a Texas Hold'em Poker Game. It has two modes: Onli
 
 ### Advanced AI
 
-There are two difficulties of AI in the game: Easy and Hard. Easy difficulty uses a combination of randomness and basic decision tree logic to decide what moves to make, and is ideal for newer players. Hard difficulty uses Counterfactual Risk Management so the AI will decide the optimal move based on current cards held and shown as the game progresses.
+There are two difficulties of AI in the game: Easy and Hard. Easy difficulty uses a combination of randomness and basic decision tree logic to decide what moves to make, and is ideal for newer players. Hard difficulty uses Counterfactual Regret Minimization so the AI will decide the optimal move based on current cards held and shown as the game progresses.
  
 ### Online Multiplayer
 
@@ -36,11 +36,22 @@ The game will use a custom dedicated server to manage online multiplayer network
 
 ## Final Goals
 
-* 35%: Local play with both AI difficulty options
-* 10%: Saving and loading local games
-* 35%: Fully functional online multiplayer games (2-6 players)
+* Saving and loading local games
+    * 2%: Players can select the starting amount of money at the beginning of a game
+	* 2%: Players can still play offline when there is no internet connection
+	* 6%: Players can save a game and load it later to continue playing without any loss of state
+* Local play with both AI difficulty options
+    * Able to play full local games against both AI difficulty modes
+	    * 10%: Player can choose to play against any number of Easy or Hard difficulty AIs (up to 6 total players). Matches follow the standard rules of Texas Hold'em and players can continue as long as they have at least the minumum starting bet for a match.
+	    * 5%: Easy difficulty should act according to a simple decision tree with the knowledge of its
+		own hand and poker hand probabilities, with random variation to avoid predictability. 
+        * 20%: Hard difficulty should minimize regret in Texas Hold'em according to the definition in [this paper](http://modelai.gettysburg.edu/2013/cfr/cfr.pdf).
+* Fully functional online multiplayer games (2-6 players)
+    * 20%: Dedicated server capable of supporting joinable lobbies and displaying available ones to clients (2-6 connections)
+	* 10%: Players can create and join private lobbies (2-6 players) via a unique join code. Lobbies should time out after prolonged inactivity or close after everyone leaves. The creator of the lobby starts the game. Subsequent connections are delayed until the end of a match, or refused if the maximum number of players are already in the lobby.
+	* 5%: Online matches conform to the standard rules of Texas Hold'em
 
 ## Stretch Goals
 
-* AI improvements: More intelligent AI bluffing and comparison to cheating/card counting AI
+* AI benchmark and Unfair mode: Hard AI is benchmarked by comparison to a cheating/card counting AI. Players can face off against this cheating AI in "Unfair mode".
 * Multiplayer login functionality for leaderboards (wins, losses, and chips won)
