@@ -45,7 +45,7 @@ The game will use a custom dedicated server to manage online multiplayer network
 	    * 10%: Player can choose to play against any number of Easy or Hard difficulty AIs (up to 6 total players). Matches follow the standard rules of Texas Hold'em and players can continue as long as they have at least the minumum starting bet for a match.
 	    * 5%: Easy difficulty should act according to a simple decision tree with the knowledge of its
 		own hand and poker hand probabilities, with random variation to avoid predictability. 
-        * 20%: Hard difficulty should minimize regret in Texas Hold'em according to the definition in [this paper](http://modelai.gettysburg.edu/2013/cfr/cfr.pdf).
+        * 20%: Hard difficulty will utilize the algorithms from [this paper](http://modelai.gettysburg.edu/2013/cfr/cfr.pdf) and transform them to apply to Texas Hold'em.
 * Fully functional online multiplayer games (2-6 players)
     * 20%: Dedicated server capable of supporting joinable lobbies and displaying available ones to clients (2-6 connections)
 	* 10%: Players can create and join private lobbies (2-6 players) via a unique join code. Lobbies should time out after prolonged inactivity or close after everyone leaves. The creator of the lobby starts the game. Subsequent connections are delayed until the end of a match, or refused if the maximum number of players are already in the lobby.
