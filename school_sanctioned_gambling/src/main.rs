@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::PresentMode, transform, pbr::ScreenSpaceAmbientOcclusionBundle};
+use bevy::{prelude::*, window::PresentMode, transform};
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
@@ -28,7 +28,7 @@ fn main() {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
 
-    let paths = vec!["matts_slide.png", "sams_slide.png", "garretts_slide.png", "griffins_slide.png"];
+    let paths = vec!["matts_slide.png", "sams_slide.png", "garretts_slide.png", "marias_slide.png", "griffins_slide.png", "alexs_slide.png", "makyes_slide.png"];
     let mut timer = 0.;
 
     for path in paths {
