@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use super::components::*;
-use rand::thread_rng;
-use rand::seq::SliceRandom;
 
 
 pub fn load_game(mut commands: Commands, asset_server: Res<AssetServer>) {
