@@ -82,7 +82,7 @@ fn deal_cards(player_count: u8, cards: Vec<Card>) -> Vec<Vec<Card>> {
     // this honestly needs like a player struct or something to make any sense
     let mut result: Vec<Vec<Card>> = Vec::with_capacity(player_count as usize);
     for i in 0..player_count-1 {
-        let hand: Vec<Card> = vec![ cards[(i * 2) as usize], cards[(i * 2 + 1) as usize] ];
+        let hand: Vec<Card> = vec![ cards.pop(), cards.pop() ];
         result.push(hand);
     }
     result
