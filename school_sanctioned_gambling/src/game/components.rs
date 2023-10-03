@@ -10,4 +10,13 @@ pub struct CheckButton;
 pub struct NBundle;
 
 #[derive(Component)]
+pub struct NCards;
+
+#[derive(Component)]
 pub struct Camera;
+
+#[derive(Component)]
+pub struct PlayerCards;
+
+#[derive(Component)]
+pub struct CommunityCards;
