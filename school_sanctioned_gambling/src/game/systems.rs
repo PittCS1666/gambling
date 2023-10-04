@@ -1,12 +1,10 @@
 use bevy::prelude::*;
 use super::components::*;
-// use crate::AppState;
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
 pub fn load_game(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(init_cards_resource());
-    commands.spawn(Camera2dBundle::default()).insert(Camera);
     commands.spawn(SpriteBundle {
         texture: asset_server.load("game_screen.png"),
         transform: Transform::from_xyz(0., 0., 1.),
@@ -63,14 +61,8 @@ pub fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
-    mut button_query: Query<Entity, With<Button>>,
-    mut node_query: Query<Entity, With<NBundle>>,
-    mut camera_query: Query<Entity, With<Camera>>,) 
+    mut node_query: Query<Entity, With<NBundle>>,) 
 {
-    for button in &mut button_query {
-        commands.entity(button).despawn_recursive();
-    }
-
     let node = node_query.single_mut();
 
     commands.entity(node).despawn_recursive();
@@ -79,9 +71,6 @@ pub fn tear_down_game_screen(
     
     commands.entity(background).despawn_recursive();
     //commands.entity(exit_button).despawn_recursive();
-
-    let camera_entity = camera_query.single_mut();
-    commands.entity(camera_entity).despawn_recursive();
 }
 
 pub fn check_button_interaction(
@@ -141,15 +130,15 @@ enum Suit {
 
 #[derive(Copy, Clone)]
 struct Card {
-    card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
+    _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
     suit: Suit,
     value: u8, // ace: 1, 2: 2, ..., 10: 10, jack: 11, queen: 12, king: 13
 }
 
 impl Card {
-    fn new(card_id: u8, suit: Suit, value: u8) -> Card {
+    fn new(_card_id: u8, suit: Suit, value: u8) -> Card {
         Card {
-            card_id,
+            _card_id,
             suit,
             value,
         }
@@ -160,16 +149,16 @@ impl Card {
             let card_value_str = self.value.to_string();
             card_value_str
         } else if self.value == 11 {
-            "Jack of".to_string()
+            "Jack".to_string()
         } else if self.value == 12 {
-            "Queen of".to_string()
+            "Queen".to_string()
         } else if self.value == 13 {
-            "King of".to_string()
+            "King".to_string()
         } else {
-            "Ace of".to_string()
+            "Ace".to_string()
         };
 
-        String::from(format!("{value} {suit}", 
+        String::from(format!("{value} of {suit}", 
         value={card_value}
         ,suit={
             if self.suit == Suit::Hearts {
@@ -236,7 +225,7 @@ fn deal_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, communit
         let flop = deal_community_cards(cards, community_query);
         spawn_community_cards(commands, &asset_server, flop, community_query);
     }
-    println!("Amount of cards left: {}", cards.len());
+    // println!("Amount of cards left: {}", cards.len());
 }
 
 fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, hands: Vec<Vec<Card>>) {
@@ -280,7 +269,7 @@ fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, 
 fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>) {
     for cards in com_cards {
         for (index,card) in cards.iter().enumerate() {
-            let left_shift = 364. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
+            let left_shift = 368. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
             commands.spawn(ButtonBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
