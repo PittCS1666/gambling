@@ -13,9 +13,6 @@ pub struct NBundle;
 pub struct NCards;
 
 #[derive(Component)]
-pub struct Camera;
-
-#[derive(Component)]
 pub struct PlayerCards;
 
 #[derive(Component)]

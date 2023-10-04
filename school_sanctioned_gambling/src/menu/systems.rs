@@ -3,7 +3,7 @@ use super::components::*;
 use crate::AppState;
 
 pub fn load_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default()).insert(Camera);
+    commands.spawn(Camera2dBundle::default());
     spawn_background(&mut commands, &asset_server);
     spawn_buttons(&mut commands, &asset_server);
 }
@@ -130,13 +130,8 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
 pub fn tear_down_menu(
     mut commands: Commands, 
     mut menu_query: Query<Entity, With<Menu>>, 
-    mut button_query: Query<Entity, With<Button>>,
-    mut node_query: Query<Entity, With<NBundle>>,
-    mut camera_query: Query<Entity, With<Camera>>,) 
+    mut node_query: Query<Entity, With<NBundle>>,) 
 {
-    for button in &mut button_query {
-        commands.entity(button).despawn_recursive();
-    }
 
     let menu = menu_query.single_mut();
     commands.entity(menu).despawn_recursive();
@@ -144,8 +139,6 @@ pub fn tear_down_menu(
     let node = node_query.single_mut();
     commands.entity(node).despawn_recursive();
 
-    let camera_entity = camera_query.single_mut();
-    commands.entity(camera_entity).despawn_recursive();
 }
 
 pub fn local_button_interaction(
