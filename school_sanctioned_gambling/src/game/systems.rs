@@ -189,8 +189,8 @@ impl Card {
     }
 
     fn copy(card: &Card) -> Card {
-        let newCard = Card::new(card._card_id, card.suit, card.value);
-        return newCard
+        let new_card = Card::new(card._card_id, card.suit, card.value);
+        return new_card
     }
 }
 
@@ -372,7 +372,7 @@ impl Hand {
 
 fn find_best_hand(cards: &Vec<Card>) -> Hand{
     //there might be a library to get all combinations easily
-    let combinations: Vec<Vec<Card>> = getAllHands(cards);
+    let combinations: Vec<Vec<Card>> = get_all_hands(cards);
 
     let mut best_hand_val = 0;
     let mut best_hand: Hand = Hand::new_blank();
@@ -400,7 +400,7 @@ fn find_best_hand(cards: &Vec<Card>) -> Hand{
 }
 
 
-fn getAllHands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
+fn get_all_hands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
     let mut combinations: Vec<Vec<Card>> = Vec::new();
     
     for i in 0..cards.len() {
@@ -527,7 +527,7 @@ fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         let mut ranks1: Vec<usize> = Vec::new();
         let mut ranks2: Vec<usize> = Vec::new();
 
-        for mut i in 0..hand1.ranks.len() {
+        for i in 0..hand1.ranks.len() {
             if hand1.ranks[i] > 0 {
                 ranks1.append(&mut vec![i]);
             }
