@@ -1,19 +1,26 @@
+use std::collections::HashMap;
+use rand::Rng;
 
 //Declaring Player Struct
+#[derive(Clone, Debug)]
 struct Player{
     hand: Vec<Card>,
-    hand_strength: u16
+    hand_strength: u16,
+    move_dist: HashMap<u16, Vec<u16>>,
 }
 
 impl Player{
     //hand clone will be copy of hand bc structs cannot be self-referantial...I think
-    fn new(hand: Vec<Card>, hand_clone: &Vec<Card>) -> Self{
+    fn new(hand: Vec<Card>, hand_clone: &Vec<Card>, move_dist: HashMap<u16, Vec<u16>>) -> Self{
         Player{
             hand,
             hand_strength: generate_hand_strength(hand_clone),
+            move_dist,
         }
     }
 }
+
+
 
 //Stealing this for now 
 //Adding card_strength field
@@ -37,6 +44,7 @@ impl Card {
     }
 }
 
+//Stolen from systems
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum Suit {
     Hearts,
@@ -45,6 +53,7 @@ enum Suit {
     Clubs
 }
 
+//Stolen from moveset
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum MoveSet {
     Fold,
@@ -62,17 +71,79 @@ fn generate_card_strength(val:u8) -> u8{
     }
 }
 
+//Generates hand strength from starting hand
 fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
     vec_hand[0].card_strength as u16 + vec_hand[1].card_strength as u16
 }
 
-fn main(){
+//Checks rand number w/in ranges to determine move
+fn generate_move(player: Player) -> String{
+    let num = rand::thread_rng().gen_range(0..=100);
+    
+    let chosen_dist = player.move_dist.get(&player.hand_strength);
 
-    let card1 = Card::new(5, Suit::Hearts, 1);
-    let card2 = Card::new(45, Suit::Clubs, 11);
-    let vec1 = vec![card1, card2];
-    let vec2 = vec1.clone();
-    let _player1 = Player::new(vec1, &vec2);
-    println!("Player hand strength is: {}", _player1.hand_strength);
+    if num <= chosen_dist.unwrap()[0]{
+        "Fold".to_string()
+    }else if num <= chosen_dist.unwrap()[1]{
+        "Call".to_string()
+    }else{
+        "Raise".to_string()
+    } 
 
+}
+
+//We have a vector of value ranges each representing a pre-flop move. 
+//Then fill up hashmap with key value pair
+//Key: Hand strength, value: ranges
+//Returns hashmap
+fn fill_move_set()->HashMap<u16, Vec<u16>>{
+    let mut move_dist = HashMap::new();
+    
+    //Vector order: fold, call, raise
+   let mut vec_of_dists: Vec<Vec<u16>> = vec![
+
+        vec![60, 85, 100], //Hand Strength: 2
+        vec![58, 85, 100], //4
+        vec![58, 85, 100], //5
+        vec![56, 84, 100], //6
+        vec![54, 83, 100],
+        vec![50, 82, 100], //8
+        vec![50, 82, 100],
+        vec![49, 82, 100], //10
+        vec![48, 82, 100],
+        vec![46, 82, 100], //12
+        vec![45, 81, 100],
+        vec![39, 79, 100], //14
+        vec![39, 79, 100],
+        vec![39, 79, 100], //16
+        vec![38, 79, 100],
+        vec![38, 78, 100], //18
+        vec![38, 78, 100],
+        vec![37, 77, 100], //20
+        vec![37, 77, 100],
+        vec![36, 78, 100], //22
+        vec![34, 77, 100],
+        vec![30, 75, 100], //24
+        vec![28, 75, 100],
+        vec![27, 74, 100], //26
+        vec![23, 70, 100],
+        vec![19, 69, 100], //28
+
+   ];
+
+    let mut i:u16 = 28;
+    while i > 3{
+        move_dist.insert(
+            i,
+            vec_of_dists.pop().unwrap(),
+        );
+
+        i-=1;
+    }
+
+    move_dist.insert(
+        2,
+        vec_of_dists.pop().unwrap(),
+    );
+    move_dist
 }
