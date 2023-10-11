@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use super::cards::*;
 
 #[derive(Component)]
 pub struct Background;
@@ -13,7 +14,12 @@ pub struct NBundle;
 pub struct NCards;
 
 #[derive(Component)]
-pub struct PlayerCards;
+pub struct PlayerCards {
+    pub player_id: u8,
+    pub cards: Vec<Card>,
+}
 
 #[derive(Component)]
-pub struct CommunityCards;
+pub struct CommunityCards {
+    pub cards: Vec<Card>,
+}

@@ -1,10 +1,14 @@
 use bevy::prelude::*;
 use crate::AppState;
 
-mod systems;
+mod cards;
+mod game_setup;
+mod buttons;
+mod hand_evaluation;
 mod components;
 
-use systems::*;
+use game_setup::*;
+use buttons::*;
 
 pub struct GamePlugin;
 
