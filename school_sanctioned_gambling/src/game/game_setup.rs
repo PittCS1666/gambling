@@ -35,27 +35,33 @@ pub fn turn_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut state: ResMut<PokerTurn>,
-    players: Query<&Player>,
+    player_entity_query: Query<(Entity, &mut Player)>,
+    mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     community_query: Query<&CommunityCards>,
+    com_entity_query: Query<Entity, With<CommunityCards>>,
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     mut ev_trigger: EventReader<PlayerTrigger>,
 ) {
-    let total_players = players.iter().count();
+    let total_players = player_entity_query.iter().count();
 
     match state.phase {
         PokerPhase::PreFlop => {
-            let cards = &mut deck.cards;
-            if players.is_empty() {
+            //Do initial stuff only once before com cards are dealt
+            if !state.round_started {
+                let cards = &mut deck.cards;
                 shuffle_cards(cards);
-                let players = deal_hands(player_count.player_count, cards);
-                spawn_player_cards(&mut commands, &asset_server, &players);
+                let players_hands = deal_hands(player_count.player_count, cards);
+                spawn_player_cards(&mut commands, &asset_server, &players_hands, player_entity_query);
+                state.round_started = true;
             }
+            //If current player isn't the human just wait 2 seconds to make it seem like computer is acting then just change turns
             if state.current_player != 0 {
                 println!("AI {} Taking Turn!", state.current_player);
                 thread::sleep(time::Duration::from_millis(2000));
                 next_player_turn(&mut state, total_players);
             } else {
+                //Check for player input event to then call for turn change
                 for _event in ev_trigger.iter() {
                     println!("Switching from player turn!");
                     next_player_turn(&mut state, total_players);
@@ -115,8 +121,11 @@ pub fn turn_system(
             }
         }
         PokerPhase::Showdown => {
-            let winners = card_function(&community_query, &players);
+            // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
+            // and remove the entities so that player_entity_query can be used in this instance
+            let winners = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
             
+            // Temp print statement to print if a single player won the hand or if their was a draw
             if winners.len() == 1 {
                 println!("Player {} won the hand!", winners[0]);
             } else if winners.len() > 1 {
@@ -126,7 +135,16 @@ pub fn turn_system(
                     .join(", ");
                 println!("Players {} have all tied and split the pot!", winners_list);
             }
+
+            // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
+            let player_card_bundle = player_card_query.single_mut();
+            commands.entity(player_card_bundle).despawn_recursive();
+
+            for entity in com_entity_query.iter() {
+                commands.entity(entity).despawn();
+            }
+            state.round_started = false;
             state.phase = PokerPhase::PreFlop;
         }
     }

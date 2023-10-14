@@ -26,6 +26,9 @@ pub struct NBundle;
 pub struct NCards;
 
 #[derive(Component)]
+pub struct VisPlayerCards;
+
+#[derive(Component)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -49,15 +52,14 @@ pub enum PokerPhase {
     Showdown,
 }
 
-#[derive(Component)]
 pub struct PokerTurn {
     pub current_player: usize,
     pub phase: PokerPhase,
+    pub round_started: bool,
 }
 impl Resource for PokerTurn {
 }
 
-#[derive(Component)]
 pub struct NumPlayers {
     pub player_count: usize
 }

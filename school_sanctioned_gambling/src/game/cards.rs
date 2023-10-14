@@ -102,6 +102,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
 
 pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&CommunityCards>,) -> Vec<Vec<Card>> {
     let mut result: Vec<Vec<Card>> = Vec::with_capacity(5);
+    // Dealing of Flop, Turn, and River
     if community_query.iter().count() == 0 {
         let flop: Vec<Card> = cards.drain(0..3).collect();
         result.push(flop);
@@ -117,10 +118,12 @@ pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&Communi
 
 pub fn card_function(
     community_query: &Query<&CommunityCards>,
-    players: &Query<&Player>,
+    players: &Vec<&Player>,
 ) -> Vec<usize> {
+    // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
     
+    // Creates an empty vector of all player hands
     let mut player_hands: Vec<(usize, Hand)> = Vec::with_capacity(players.iter().count());
     for player in players.iter() {
         let player_id = player.player_id;
@@ -131,7 +134,8 @@ pub fn card_function(
             player_hands.push((player_id, play_hand));
         }
     }
-
+    
+    // Ultimately returns the hands with the highest score value, not including if one hand has a higher high card then the other just yet
     let mut highest_score = 0;
     let mut highest_scoring_players = Vec::new();
 
@@ -150,17 +154,31 @@ pub fn card_function(
     highest_scoring_players
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>) {
+pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, mut query: Query<(Entity, &mut Player)>,) {
+    // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
-        commands.spawn(Player {
-            player_id: player.player_id,
-            cards: player.cards.clone(),
-            cash: player.cash,
-            current_bet: player.current_bet,
-            has_folded: player.has_folded,
-            has_moved: player.has_moved,
-        });
+        let mut player_exists = false;
+        for (entity, mut existing_player) in query.iter_mut() {
+            if player.player_id == existing_player.player_id {
+                existing_player.cards = player.cards.clone();
+                player_exists = true;
+                break;
+            } else {
+                continue;
+            }
+        }
+        if !player_exists {
+            commands.spawn(Player {
+                player_id: player.player_id,
+                cards: player.cards.clone(),
+                cash: player.cash,
+                current_bet: player.current_bet,
+                has_folded: player.has_folded,
+                has_moved: player.has_moved,
+            });
+        }
 
+        // Only ever show the cards of player 0 i.e. the human player to the screen
         if player.player_id == 0 {
             let top_shift = 690. - (90. * ((player.player_id as f32) + 1.));
             commands
@@ -181,7 +199,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     border_color: BorderColor(Color::BLACK),
                     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
                     ..Default::default()
-                })
+                }).insert(VisPlayerCards)
                 .with_children(|parent| {
                     for (index, card) in player.cards.iter().enumerate() {
                         let left_shift = 10. + 230. * (index as f32);

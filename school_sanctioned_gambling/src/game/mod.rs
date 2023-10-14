@@ -19,7 +19,9 @@ impl Plugin for GamePlugin {
         app
         .add_event::<PlayerTrigger>()
         .insert_resource(init_cards_resource())
-        .insert_resource(PokerTurn { current_player: 0, phase: PokerPhase::PreFlop })
+        //This line can be used to set whose turn it is
+        .insert_resource(PokerTurn { current_player: 0, phase: PokerPhase::PreFlop, round_started: false,})
+        //Update this line to increase number of players for now
         .insert_resource(NumPlayers { player_count: 2 })
         .add_systems(OnEnter(AppState::LocalPlay), load_game)
         .add_systems(OnExit(AppState::LocalPlay), tear_down_game_screen)
