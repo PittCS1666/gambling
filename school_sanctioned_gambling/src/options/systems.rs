@@ -5,18 +5,8 @@ use crate::AppState;
 
 
 pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // commands.spawn(Camera2dBundle::default());
-    // spawn_background(&mut commands, &asset_server);
     spawn_buttons(&mut commands, &asset_server);
 }
-
-// fn spawn_background(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-//     commands.spawn(SpriteBundle {
-//         texture: asset_server.load("main_menu.png"),
-//         transform: Transform::from_xyz(0., 0., 1.),
-//         ..default()
-//     }).insert(Menu);
-// }
 
 fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands
@@ -40,17 +30,11 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     font_size: 50.0,
                     color: Color::rgb(0.9, 0.9, 0.9),
                 })
-                    // .with_style(Style {
-                    //     margin: UiRect::bottom(Val::Px(25.)),
-                    //     ..default()
-                    // }),
             );
 
             // spawn local game button
             parent.spawn(ButtonBundle {
                 style: Style {
-                    // position_type: PositionType::Absolute,
-                    // top: Val::Px(265.),
                     width: Val::Px(230.0),
                     height: Val::Px(90.0),
                     border: UiRect::all(Val::Px(3.0)),
