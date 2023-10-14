@@ -3,10 +3,12 @@ use bevy::{prelude::*, window::PresentMode};
 mod credits;
 mod menu;
 mod game;
+mod options;
 
 use game::*;
 use menu::*;
 use credits::*;
+use options::*;
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
@@ -20,6 +22,7 @@ pub enum AppState {
     LocalPlay,
     OnlinePlay,
     Credits,
+    Options,
 }
 
 fn main() {
@@ -38,6 +41,7 @@ fn main() {
             MenuPlugin,
             CreditsPlugin,
             GamePlugin,
+            OptionsPlugin,
         ))
         .run();
 }
