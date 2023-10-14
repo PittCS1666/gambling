@@ -25,16 +25,32 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                 width: Val::Percent(100.0),
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::SpaceEvenly,
+                flex_direction: FlexDirection::Column,
                 ..default()
             },
             ..default()
         }).insert(NBundle)
         .with_children(|parent| {
-            //spawn local game button
+
+            //spawn title text
+            parent.spawn(TextBundle::from_section(
+                "Options Menu",
+                TextStyle {
+                    font: asset_server.load("fonts/Lato-Black.ttf"),
+                    font_size: 50.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                })
+                    // .with_style(Style {
+                    //     margin: UiRect::bottom(Val::Px(25.)),
+                    //     ..default()
+                    // }),
+            );
+
+            // spawn local game button
             parent.spawn(ButtonBundle {
                 style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(265.),
+                    // position_type: PositionType::Absolute,
+                    // top: Val::Px(265.),
                     width: Val::Px(230.0),
                     height: Val::Px(90.0),
                     border: UiRect::all(Val::Px(3.0)),
