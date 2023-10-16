@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 use super::cards::*;
 
-struct Hand {
+pub struct Hand {
     cards: Vec<Card>,   //a vector with the 5 cards in a hand
     ranks: Vec<u8>,     //a vector that holds the number of each rank that is in the hand
     suits: u8,          //how many suits are present in the hand
-    score: u8           //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
+    pub score: u8           //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
 }
 
 impl Hand {
@@ -49,12 +49,13 @@ impl Hand {
     }
 }
 
-pub fn test_evaluator(player_id: u8, player_cards: Vec<Card>, community_cards: Vec<Card>) {
+pub fn test_evaluator(player_id: usize, player_cards: Vec<Card>, community_cards: Vec<Card>) -> Hand{
     let cards: Vec<Card> = player_cards.into_iter().chain(community_cards.into_iter()).collect();
     // use println below to see players cards in terminal
     // println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
     println!("\nPlayer {}: {}", player_id, Hand::to_string(&hand));
+    hand
 }
 
 fn find_best_hand(cards: &Vec<Card>) -> Hand{
