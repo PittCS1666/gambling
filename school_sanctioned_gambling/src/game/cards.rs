@@ -122,36 +122,36 @@ pub fn card_function(
 ) -> Vec<usize> {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
-    
-    // Creates an empty vector of all player hands
-    let mut player_hands: Vec<(usize, Hand)> = Vec::with_capacity(players.iter().count());
-    for player in players.iter() {
-        let player_id = player.player_id;
-        let player_cards = &player.cards;
+    let mut hand1: Hand = Hand::_new_blank();
+    let mut hand2: Hand = Hand::_new_blank();
+    // Iterate through each player
+    for player_cards_component in player_card_query.iter() {
+        let player_cards = &player_cards_component.cards;
 
+        
+
+        // Ensure there are at least 5 cards between the player and community cards before evaluation
         if player_cards.len() + community_cards.len() >= 5 {
-            let play_hand = test_evaluator(player.player_id, player_cards.to_vec(), community_cards.to_vec());
-            player_hands.push((player_id, play_hand));
+            let hand = test_evaluator(player_cards_component.player_id, player_cards.to_vec(), community_cards.to_vec());
+            if player_cards_component.player_id == 0 {
+                hand1 = hand;
+            }
+            else {
+                hand2 = hand;
+            }
         }
     }
     
-    // Ultimately returns the hands with the highest score value, not including if one hand has a higher high card then the other just yet
-    let mut highest_score = 0;
-    let mut highest_scoring_players = Vec::new();
-
-    for (player_id, hand) in &player_hands {
-        let score = hand.score;
-        if score > highest_score {
-            highest_scoring_players.clear();
-            highest_scoring_players.push(*player_id);
-            highest_score = score;
-        } else if score == highest_score {
-            // Found another hand with the highest score, add the player_id to the list
-            highest_scoring_players.push(*player_id);
-        }
+    let comparison = compare_hands(&mut hand1, &mut hand2);
+    if comparison == 1 {
+        println!("Player 0 wins with a score of {}\n", hand1.score);
     }
-
-    highest_scoring_players
+    else if comparison == 2 {
+        println!("Player 1 wins with a score of {}\n", hand2.score);
+    }
+    else {
+        println!("It's a draw!\n");
+    }
 }
 
 pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, mut query: Query<(Entity, &mut Player)>,) {
