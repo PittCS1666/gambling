@@ -154,11 +154,11 @@ pub fn card_function(
     }
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, mut query: Query<(Entity, &mut Player)>,) {
+pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
-        for (entity, mut existing_player) in query.iter_mut() {
+        for (_entity, mut existing_player) in query.iter_mut() {
             if player.player_id == existing_player.player_id {
                 existing_player.cards = player.cards.clone();
                 player_exists = true;

@@ -56,6 +56,8 @@ pub struct PokerTurn {
     pub current_player: usize,
     pub phase: PokerPhase,
     pub round_started: bool,
+    pub pot: usize,
+    pub current_top_bet: usize,
 }
 impl Resource for PokerTurn {
 }
@@ -66,6 +68,18 @@ pub struct NumPlayers {
 impl Resource for NumPlayers {
 }
 
-pub struct PlayerTrigger;
-impl Event for PlayerTrigger {
+#[derive(Default, Debug)]
+pub struct LastPlayerAction {
+    pub action: Option<PlayerAction>,
+}
+impl Resource for LastPlayerAction {
+}
+
+#[derive(Debug)]
+pub enum PlayerAction {
+    Raise,
+    Check,
+    Fold,
+    Call,
+    None,
 }
