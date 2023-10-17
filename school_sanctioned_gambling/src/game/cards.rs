@@ -129,9 +129,11 @@ pub fn card_function(
         let player_id = player.player_id;
         let player_cards = &player.cards;
 
-        if player_cards.len() + community_cards.len() >= 5 {
-            let play_hand = test_evaluator(player.player_id, player_cards.to_vec(), community_cards.to_vec());
-            player_hands.push((player_id, play_hand));
+        if !player.has_folded {
+            if player_cards.len() + community_cards.len() >= 5 {
+                let play_hand = test_evaluator(player.player_id, player_cards.to_vec(), community_cards.to_vec());
+                player_hands.push((player_id, play_hand));
+            }
         }
     }
     
@@ -154,11 +156,11 @@ pub fn card_function(
     highest_scoring_players
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, mut query: Query<(Entity, &mut Player)>,) {
+pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
-        for (entity, mut existing_player) in query.iter_mut() {
+        for (_entity, mut existing_player) in query.iter_mut() {
             if player.player_id == existing_player.player_id {
                 existing_player.cards = player.cards.clone();
                 player_exists = true;

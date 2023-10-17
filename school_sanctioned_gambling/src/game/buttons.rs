@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use super::components::*;
-use super::cards::*;
 
 pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     let button_texts = vec!["Check", "Call", "Raise $50", "Fold"];
@@ -68,17 +67,16 @@ pub fn check_button_interaction(
     ),
     (Changed<Interaction>, With<CheckButton>),
     >,
-    mut players: Query<&mut Player>,
-    mut event_writer: EventWriter<PlayerTrigger>,
+    player_entity_query: Query<(Entity, &mut Player)>,
+    state: ResMut<PokerTurn>,
+    mut last_action: ResMut<LastPlayerAction>,
 )   {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-                for mut player in players.iter_mut() {
-                    if player.player_id == 0  {
-                        player.has_moved = true;
-                        event_writer.send(PlayerTrigger);
-                        break;
+                for (_, player) in player_entity_query.iter() {
+                    if player.player_id == 0 && state.current_player == 0 {
+                        last_action.action = Some(PlayerAction::Check);
                     }
                 }
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
@@ -97,8 +95,6 @@ pub fn check_button_interaction(
 }
 
 pub fn raise_button_interaction(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
     mut interaction_query: Query<
     (
         &Interaction,
@@ -107,12 +103,90 @@ pub fn raise_button_interaction(
     ),
     (Changed<Interaction>, With<RaiseButton>),
     >,
-    community_query: Query<&CommunityCards>,
-    mut deck: ResMut<Deck>,
+    player_entity_query: Query<(Entity, &mut Player)>,
+    state: ResMut<PokerTurn>,
+    mut last_action: ResMut<LastPlayerAction>,
 )   {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
+                for (_, player) in player_entity_query.iter() {
+                    if player.player_id == 0 && state.current_player == 0 {
+                        last_action.action = Some(PlayerAction::Raise);
+                    }
+                }
+                *color = Color::rgb(0.075, 0.118, 0.502).into();
+                border_color.0 = Color::RED;
+            }
+            Interaction::Hovered => {
+                *color = Color::rgb(0.133, 0.188, 0.659).into();
+                border_color.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                *color = Color::rgb(0.071, 0.141, 0.753).into();
+                border_color.0 = Color::BLACK;
+            }
+        }
+    }
+}
+
+pub fn fold_button_interaction(
+    mut interaction_query: Query<
+    (
+        &Interaction,
+        &mut BackgroundColor,
+        &mut BorderColor,
+    ),
+    (Changed<Interaction>, With<FoldButton>),
+    >,
+    player_entity_query: Query<(Entity, &mut Player)>,
+    state: ResMut<PokerTurn>,
+    mut last_action: ResMut<LastPlayerAction>,
+)   {
+    for (interaction, mut color, mut border_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                for (_, player) in player_entity_query.iter() {
+                    if player.player_id == 0 && state.current_player == 0 {
+                        last_action.action = Some(PlayerAction::Fold);
+                    }
+                }
+                *color = Color::rgb(0.075, 0.118, 0.502).into();
+                border_color.0 = Color::RED;
+            }
+            Interaction::Hovered => {
+                *color = Color::rgb(0.133, 0.188, 0.659).into();
+                border_color.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                *color = Color::rgb(0.071, 0.141, 0.753).into();
+                border_color.0 = Color::BLACK;
+            }
+        }
+    }
+}
+
+pub fn call_button_interaction(
+    mut interaction_query: Query<
+    (
+        &Interaction,
+        &mut BackgroundColor,
+        &mut BorderColor,
+    ),
+    (Changed<Interaction>, With<CallButton>),
+    >,
+    player_entity_query: Query<(Entity, &mut Player)>,
+    state: ResMut<PokerTurn>,
+    mut last_action: ResMut<LastPlayerAction>,
+)   {
+    for (interaction, mut color, mut border_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                for (_, player) in player_entity_query.iter() {
+                    if player.player_id == 0 && state.current_player == 0 {
+                        last_action.action = Some(PlayerAction::Call);
+                    }
+                }
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
                 border_color.0 = Color::RED;
             }
