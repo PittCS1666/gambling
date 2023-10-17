@@ -119,13 +119,13 @@ pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&Communi
 pub fn card_function(
     community_query: &Query<&CommunityCards>,
     players: &Vec<&Player>,
-) -> Vec<usize> {
+) {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
     let mut hand1: Hand = Hand::_new_blank();
     let mut hand2: Hand = Hand::_new_blank();
     // Iterate through each player
-    for player_cards_component in player_card_query.iter() {
+    for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
 
         
