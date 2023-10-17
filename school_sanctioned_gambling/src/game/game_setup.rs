@@ -199,18 +199,7 @@ pub fn turn_system(
         PokerPhase::Showdown => {
             // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
             // and remove the entities so that player_entity_query can be used in this instance
-            let winners = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
-            
-            // Temp print statement to print if a single player won the hand or if their was a draw
-            if winners.len() == 1 {
-                println!("Player {} won the hand!", winners[0]);
-            } else if winners.len() > 1 {
-                let winners_list = winners.iter()
-                    .map(|id| id.to_string())
-                    .collect::<Vec<String>>()
-                    .join(", ");
-                println!("Players {} have all tied and split the pot!", winners_list);
-            }
+            card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
 
             // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
