@@ -49,14 +49,14 @@ impl Hand {
     }
 }
 
-pub fn test_evaluator(player_id: u8, player_cards: Vec<Card>, community_cards: Vec<Card>) -> Hand{
+
+pub fn test_evaluator(player_id: usize, player_cards: Vec<Card>, community_cards: Vec<Card>) -> Hand{
     let cards: Vec<Card> = player_cards.into_iter().chain(community_cards.into_iter()).collect();
     //use println below to see players cards in terminal
     //println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
     println!("Player {}: {}", player_id, Hand::to_string(&hand));
     return hand;
-    
 }
 
 fn find_best_hand(cards: &Vec<Card>) -> Hand{
