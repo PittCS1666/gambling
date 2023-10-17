@@ -133,15 +133,35 @@ pub fn card_function(
 ) {
     // Get the community cards; assuming there's only one CommunityCards component
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
-    
+    let mut hand1: Hand = Hand::_new_blank();
+    let mut hand2: Hand = Hand::_new_blank();
     // Iterate through each player
     for player_cards_component in player_card_query.iter() {
         let player_cards = &player_cards_component.cards;
 
+        
+
         // Ensure there are at least 5 cards between the player and community cards before evaluation
         if player_cards.len() + community_cards.len() >= 5 {
-            test_evaluator(player_cards_component.player_id, player_cards.to_vec(), community_cards.to_vec());
+            let hand = test_evaluator(player_cards_component.player_id, player_cards.to_vec(), community_cards.to_vec());
+            if player_cards_component.player_id == 0 {
+                hand1 = hand;
+            }
+            else {
+                hand2 = hand;
+            }
         }
+    }
+    
+    let comparison = compare_hands(&mut hand1, &mut hand2);
+    if comparison == 1 {
+        println!("Player 0 wins with a score of {}\n", hand1.score);
+    }
+    else if comparison == 2 {
+        println!("Player 1 wins with a score of {}\n", hand2.score);
+    }
+    else {
+        println!("It's a draw!\n");
     }
 }
 

@@ -1,15 +1,15 @@
 use std::collections::HashSet;
 use super::cards::*;
 
-struct Hand {
+pub struct Hand {
     cards: Vec<Card>,   //a vector with the 5 cards in a hand
     ranks: Vec<u8>,     //a vector that holds the number of each rank that is in the hand
     suits: u8,          //how many suits are present in the hand
-    score: u8           //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
+    pub score: u8           //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
 }
 
 impl Hand {
-    fn _new_blank() -> Hand {
+    pub fn _new_blank() -> Hand {
         Hand {
             cards: Vec::new(),
             ranks: vec![0; 13],
@@ -49,20 +49,28 @@ impl Hand {
     }
 }
 
-pub fn test_evaluator(player_id: u8, player_cards: Vec<Card>, community_cards: Vec<Card>) {
+pub fn test_evaluator(player_id: u8, player_cards: Vec<Card>, community_cards: Vec<Card>) -> Hand{
     let cards: Vec<Card> = player_cards.into_iter().chain(community_cards.into_iter()).collect();
-    // use println below to see players cards in terminal
-    // println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
+    //use println below to see players cards in terminal
+    //println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
-    println!("\nPlayer {}: {}", player_id, Hand::to_string(&hand));
+    println!("Player {}: {}", player_id, Hand::to_string(&hand));
+    return hand;
+    
 }
 
 fn find_best_hand(cards: &Vec<Card>) -> Hand{
     //there might be a library to get all combinations easily
+    if cards.len() == 5 {
+        let mut hand: Hand = Hand::new(cards.to_vec());
+        evaluate_hand(&mut hand);
+        return hand;
+    }
+
     let combinations: Vec<Vec<Card>> = get_all_hands(cards);
 
-    let mut best_hand_val = 1;
-    let mut best_hand: Hand = Hand::new(cards.to_vec());
+    let mut best_hand_val = 0;
+    let mut best_hand: Hand = Hand::_new_blank();
     
     for combination in combinations {
         let mut cur_hand = Hand::new(combination);
@@ -202,7 +210,7 @@ fn is_straight(ranks: &Vec<u8>) -> bool {
 }
 
 //returns 1 if hand1 > hand2, 2 if hand2 > hand1, and 0 if they are equal
-fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
+pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
     let score1 = hand1.score;
     let score2 = hand2.score;
 
@@ -212,29 +220,136 @@ fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
     else if score2 > score1 {
         return 2;
     }
-    else {
-        let mut ranks1: Vec<usize> = Vec::new();
-        let mut ranks2: Vec<usize> = Vec::new();
 
-        for i in 0..hand1.ranks.len() {
-            if hand1.ranks[i] > 0 {
+    
+    if score1 == 1 {    //compare pairs
+        let pair1 = find_next(&hand1.ranks, 0, 2);
+        let pair2 = find_next(&hand2.ranks, 0, 2);
+
+        let comparison = compare(pair1, pair2);
+
+        if comparison != 0 {
+            return comparison;
+        }
+    }
+    else if score1 == 2 {   //compare two-pair
+        let pair1 = find_next(&hand1.ranks, 0, 2);
+        let pair2 = find_next(&hand2.ranks, 0, 2);
+
+        let comparison = compare(pair1, pair2);
+
+        if comparison != 0 {
+            return comparison;
+        }
+
+        let pair3 = find_next(&hand1.ranks, usize::from(pair1 + 1), 2);
+        let pair4 = find_next(&hand2.ranks, usize::from(pair2 + 1), 2);
+
+        let comparison = compare(pair3, pair4);
+
+        if comparison != 0 {
+            return comparison;
+        }
+    }
+    else if score1 == 3 {   //compare three of a kind
+        let three1 = find_next(&hand1.ranks, 0, 3);
+        let three2 = find_next(&hand2.ranks, 0, 3);
+
+        let comparison = compare(three1, three2);
+
+        if comparison != 0 {
+            return comparison;
+        }
+    }
+    else if score1 == 6 {   //compare full house
+        let three1 = find_next(&hand1.ranks, 0, 3);
+        let three2 = find_next(&hand2.ranks, 0, 3);
+
+        let comparison = compare(three1, three2);
+
+        if comparison != 0 {
+            return comparison;
+        }
+
+        let pair1 = find_next(&hand1.ranks, 0, 2);
+        let pair2 = find_next(&hand2.ranks, 0, 2);
+
+        let comparison = compare(pair1, pair2);
+
+        return comparison;
+
+    }
+    else if score1 == 7 {   //compare four of a kind
+        let four1 = find_next(&hand1.ranks, 0, 4);
+        let four2 = find_next(&hand2.ranks, 0, 4);
+
+        let comparison = compare(four1, four2);
+
+        if comparison != 0 {
+            return comparison;
+        }
+    }
+    
+    let mut ranks1: Vec<usize> = Vec::new();
+    let mut ranks2: Vec<usize> = Vec::new();
+
+    for i in 0..hand1.ranks.len() {
+        if hand1.ranks[i] > 0 {
+            if i == 0 {
+                ranks1.append(&mut vec![14]); 
+            }
+            else {
                 ranks1.append(&mut vec![i]);
             }
-            if hand2.ranks[i] > 0 {
+        }
+        if hand2.ranks[i] > 0 {
+            if i == 0 {
+                ranks2.append(&mut vec![14]); 
+            }
+            else {
                 ranks2.append(&mut vec![i]);
             }
         }
+    }
 
-        ranks1.reverse();
-        ranks2.reverse();
-        for i in 0..ranks2.len() {
-            if ranks1[i] > ranks2[i] {
-                return 1;
-            }
-            else if ranks2[i] > ranks1[i] {
-                return 2;
-            }
+    ranks1.reverse();
+    ranks2.reverse();
+    for i in 0..ranks2.len() {
+        if ranks1[i] > ranks2[i] {
+            return 1;
+        }
+        else if ranks2[i] > ranks1[i] {
+            return 2;
         }
     }
+    
     return 0;
+}
+
+fn compare(mut val1: u8, mut val2: u8) -> u8 {
+    if val1 == 0 {
+        val1 = 14;
+    }
+    if val2 == 0 {
+        val2 = 14;
+    }
+
+    if val1 > val2 {
+        return 1;
+    }
+    else if val2 > val1 {
+        return 2;
+    }
+    else {
+        return 0;
+    }
+}
+
+fn find_next(ranks: &Vec<u8>, start_index: usize, value: u8) -> u8 {
+    for i in start_index..ranks.len() {
+        if ranks[i] == value {
+            return u8::try_from(i).unwrap();
+        }
+    }
+    0
 }
