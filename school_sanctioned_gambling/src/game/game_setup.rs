@@ -16,6 +16,8 @@ use rand::Rng;
 // Add visuals to players to signify what action they took
 // Add visuals to signify current bet needed
 // Add delay of AI to make it seem like AI Players are thinking
+// Add logic to pull certain values from options screen
+// Add small blind and big blinds plus logic
 
 pub fn load_game(
     mut commands: Commands,
@@ -49,56 +51,37 @@ fn process_player_turn(
     state: &mut ResMut<PokerTurn>,
     player_entity_query: &mut Query<(Entity, &mut Player)>,
     player_count: &ResMut<NumPlayers>,
-    mut last_action: ResMut<LastPlayerAction>,
+    last_action: ResMut<LastPlayerAction>,
 ) {
+    let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
             if player.player_id != 0 {
-                if !player.has_folded{
-                    player.has_moved = true;
+                if !player.has_folded && !player.is_all_in {
                     let mut rng = rand::thread_rng();
                     if rng.gen_bool(0.2) {
-                        player.has_folded = true;
-                        println!("Player {} has folded!", player.player_id);
+                        player_raised = raise_action(state, player, player_count, last_action,);
+                    } else {
+                        check_action(state, player, player_count, last_action);
                     }
-                    state.current_player = (current_player + 1) % player_count.player_count;
                     break;
                 } else {
                     state.current_player = (current_player + 1) % player_count.player_count;
                     player.has_moved = true;
                 }
             } else {
-                if !player.has_folded {
+                if !player.has_folded && !player.is_all_in {
                     if let Some(PlayerAction::Check) = last_action.action {
-                        println!("Player 0 has checked!");
-                        player.has_moved = true;
-                        last_action.action = Some(PlayerAction::None);
-                        state.current_player = (state.current_player + 1) % player_count.player_count;
+                        check_action(state, player, player_count, last_action);
                         break;
                     } else if let Some(PlayerAction::Raise) = last_action.action {
-                        state.pot += (state.current_top_bet + 50) - state.current_top_bet;
-                        state.current_top_bet += 50;
-                        println!("Player 0 has raised the bet to {}", state.current_top_bet);
-                        player.has_moved = true;
-                        player.cash -= state.current_top_bet - player.current_bet;
-                        player.current_bet = state.current_top_bet;
-                        last_action.action = Some(PlayerAction::None);
-                        state.current_player = (state.current_player + 1) % player_count.player_count;
+                        player_raised = raise_action(state, player, player_count, last_action,);
                         break;
                     } else if let Some(PlayerAction::Fold) = last_action.action {
-                        println!("Player 0 has folded!");
-                        player.has_moved = true;
-                        player.has_folded = true;
-                        last_action.action = Some(PlayerAction::None);
-                        state.current_player = (state.current_player + 1) % player_count.player_count;
+                        fold_action(state, player, player_count, last_action);
                         break;
                     } else if let Some(PlayerAction::Call) = last_action.action {
-                        println!("Player 0 has called!");
-                        player.has_moved = true;
-                        last_action.action = Some(PlayerAction::None);
-                        state.pot += state.current_top_bet;
-                        player.cash -= state.current_top_bet;
-                        player.current_bet = state.current_top_bet;
+                        call_action(state, player, player_count, last_action);
                         break;
                     }
                 } else {
@@ -107,7 +90,113 @@ fn process_player_turn(
                 }
             }
         }
-        //println!("Player {} cash: {}, current bet: {}, folded?: {}, moved? {}", player.player_id, player.cash, player.current_bet, player.has_folded, player.has_moved);   
+    }
+    if player_raised {
+        for (_entity, mut player) in player_entity_query.iter_mut() {
+            if player.player_id != current_player {
+                player.has_moved = false;
+            } else {
+                player.has_raised = false;
+            }
+        }
+    }
+}
+
+pub fn check_action (
+    state: &mut ResMut<PokerTurn>,
+    mut player: Mut<'_, Player>,
+    player_count: &ResMut<NumPlayers>,
+    mut last_action: ResMut<'_, LastPlayerAction>,
+) {
+    if state.current_top_bet > 0 {
+        println!("Cannot check since top_bet is > {}!", state.current_top_bet);
+        if player.player_id == 0 {
+            last_action.action = Some(PlayerAction::None);
+        }
+    } else {
+        println!("Player {} has checked!", player.player_id);
+        player.has_moved = true;
+        last_action.action = Some(PlayerAction::None);
+        state.current_player = (state.current_player + 1) % player_count.player_count;
+    }
+}
+
+pub fn raise_action (
+    state: &mut ResMut<PokerTurn>,
+    mut player: Mut<'_, Player>,
+    player_count: &ResMut<NumPlayers>,
+    mut last_action: ResMut<'_, LastPlayerAction>,
+) -> bool {
+    if player.cash >= (state.current_top_bet + 50) - player.current_bet {
+        state.pot += (state.current_top_bet + 50) - player.current_bet;
+        state.current_top_bet += 50;
+        println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
+        player.has_moved = true;
+        player.has_raised = true;
+        player.cash -= state.current_top_bet - player.current_bet;
+        if player.cash == 0 {
+            player.is_all_in = true;
+            println!("Player {} has gone all in!", player.player_id);
+        }
+        player.current_bet = state.current_top_bet;
+        last_action.action = Some(PlayerAction::None);
+        state.current_player = (state.current_player + 1) % player_count.player_count;
+        return true;
+    } else {
+        println!("Player {} cannot raise due to going negative", player.player_id);
+        if player.player_id == 0 {
+            last_action.action = Some(PlayerAction::None);
+        }
+        return false;
+    }
+}
+
+pub fn fold_action(
+    state: &mut ResMut<PokerTurn>,
+    mut player: Mut<'_, Player>,
+    player_count: &ResMut<NumPlayers>,
+    mut last_action: ResMut<'_, LastPlayerAction>,
+) {
+    println!("Player {} has folded!", player.player_id);
+    player.has_moved = true;
+    player.has_folded = true;
+    if player.player_id == 0 {
+        last_action.action = Some(PlayerAction::None);
+    }
+    state.current_player = (state.current_player + 1) % player_count.player_count;
+}
+
+pub fn call_action(
+    state: &mut ResMut<PokerTurn>,
+    mut player: Mut<'_, Player>,
+    player_count: &ResMut<NumPlayers>,
+    mut last_action: ResMut<'_, LastPlayerAction>,
+) {
+    if player.cash >= state.current_top_bet - player.current_bet {
+        println!("Player {} has called!", player.player_id);
+        player.has_moved = true;
+        if player.player_id == 0 {
+            last_action.action = Some(PlayerAction::None);
+        }
+        state.pot += state.current_top_bet - player.current_bet;
+        player.cash -= state.current_top_bet - player.current_bet;
+        if player.cash == 0 {
+            player.is_all_in = true;
+            println!("Player {} has gone all in!", player.player_id);
+        }
+        player.current_bet = state.current_top_bet;
+        state.current_player = (state.current_player + 1) % player_count.player_count;
+    } else {
+        println!("Player {} has gone all in!", player.player_id);
+        player.has_moved = true;
+        player.is_all_in = true;
+        if player.player_id == 0 {
+            last_action.action = Some(PlayerAction::None);
+        }
+        state.pot += player.cash;
+        player.current_bet = player.cash + player.current_bet;
+        player.cash = 0;
+        state.current_player = (state.current_player + 1) % player_count.player_count;
     }
 }
 
@@ -131,6 +220,12 @@ pub fn turn_system(
                 None
             }
         }).unwrap_or(false);
+    
+    // If only one player left go straight to showdown phase
+    let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
+    if active_players_count == 1 {
+        state.phase = PokerPhase::Showdown;
+    }
 
     match state.phase {
         PokerPhase::PreFlop => {
@@ -146,9 +241,6 @@ pub fn turn_system(
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
             }
-            // for (_entity, player) in player_entity_query.iter_mut() {
-            //     println!("Player {} has moved: {}", player.player_id, player.has_moved);
-            // }   
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
         PokerPhase::Flop => {
@@ -161,9 +253,6 @@ pub fn turn_system(
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
             }
-            // for (_entity, player) in player_entity_query.iter_mut() {
-            //     println!("Player {} has moved: {}", player.player_id, player.has_moved);
-            // } 
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
         PokerPhase::Turn => {
@@ -176,9 +265,6 @@ pub fn turn_system(
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
             }
-            // for (_entity, player) in player_entity_query.iter_mut() {
-            //     println!("Player {} has moved: {}", player.player_id, player.has_moved);
-            // } 
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count); 
         }
         PokerPhase::River => {
@@ -191,9 +277,6 @@ pub fn turn_system(
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
             }
-            // for (_entity, player) in player_entity_query.iter_mut() {
-            //     println!("Player {} has moved: {}", player.player_id, player.has_moved);
-            // } 
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
         PokerPhase::Showdown => {
@@ -210,14 +293,19 @@ pub fn turn_system(
                 commands.entity(entity).despawn();
             }
 
+            println!("The pot won equals {}", state.pot);
+
             state.pot = 0;
             state.current_top_bet = 0;
-            state.current_player = 2;
+            state.current_player = (state.current_player + 1) % player_count.player_count;
 
 
             for (_, mut player) in player_entity_query.iter_mut() {
                 player.has_folded = false;
                 player.current_bet = 0;
+                player.has_moved = false;
+                player.is_all_in = false;
+                player.has_raised = false;
             }
 
             state.round_started = false;
@@ -241,26 +329,38 @@ fn next_player_turn(
             PokerPhase::PreFlop => {
                 for (_entity, mut player) in player_entity_query.iter_mut() {
                     player.has_moved = false;
+                    player.current_bet = 0;
+                    player.has_raised = false;
                 }        
                 state.phase = PokerPhase::Flop;
+                state.current_top_bet = 0;
             }
             PokerPhase::Flop => {
                 for (_entity, mut player) in player_entity_query.iter_mut() {
                     player.has_moved = false;
+                    player.current_bet = 0;
+                    player.has_raised = false;
                 }
                 state.phase = PokerPhase::Turn;
+                state.current_top_bet = 0;
             }
             PokerPhase::Turn => {
                 for (_entity, mut player) in player_entity_query.iter_mut() {
                     player.has_moved = false;
+                    player.current_bet = 0;
+                    player.has_raised = false;
                 }
                 state.phase = PokerPhase::River;
+                state.current_top_bet = 0;
             }
             PokerPhase::River => {
                 for (_entity, mut player) in player_entity_query.iter_mut() {
                     player.has_moved = false;
+                    player.current_bet = 0;
+                    player.has_raised = false;
                 }
                 state.phase = PokerPhase::Showdown;
+                state.current_top_bet = 0;
             }
             PokerPhase::Showdown => {}
         }
