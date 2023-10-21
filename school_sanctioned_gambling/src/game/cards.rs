@@ -95,7 +95,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
-        result.push(Player { player_id, cards: hand, cash: 500, current_bet: 0, has_folded: false, has_moved: false});
+        result.push(Player { player_id, cards: hand, cash: 500, current_bet: 0, has_folded: false, has_moved: false, is_all_in: false, has_raised: false,});
     }
     result
 }
@@ -175,6 +175,8 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 current_bet: player.current_bet,
                 has_folded: player.has_folded,
                 has_moved: player.has_moved,
+                is_all_in: player.is_all_in,
+                has_raised: player.has_raised,
             });
         }
 

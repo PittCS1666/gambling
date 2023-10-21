@@ -36,6 +36,8 @@ pub struct Player {
     pub current_bet: usize,
     pub has_folded: bool,
     pub has_moved: bool,
+    pub is_all_in: bool,
+    pub has_raised: bool,
 }
 
 #[derive(Component)]
