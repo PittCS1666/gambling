@@ -139,7 +139,8 @@ fn process_player_turn(
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
             if player.player_id != 0 {
-                if !player.has_folded && !player.is_all_in {
+                //once the generate move is completely working this should be the code for the AI decisions
+                /*if !player.has_folded && !player.is_all_in {
                     let player_move: String = generate_move(&player);
                     if player_move == "Raise" {
                         raise_action(state, player, player_count, &mut last_action);
@@ -153,19 +154,19 @@ fn process_player_turn(
                     else {
                         check_action(state, player, player_count, &mut last_action);
                     }
-                }
-                /*if !player.has_folded && !player.is_all_in {
+                }*/
+                if !player.has_folded && !player.is_all_in {
                     let mut rng = rand::thread_rng();
                     if rng.gen_bool(0.2) {
-                        player_raised = raise_action(state, player, player_count, last_action,);
+                        player_raised = raise_action(state, player, player_count, &mut last_action,);
                     } else {
-                        check_action(state, player, player_count, last_action);
+                        check_action(state, player, player_count, &mut last_action);
                     }
                     break;
                 } else {
                     state.current_player = (current_player + 1) % player_count.player_count;
                     player.has_moved = true;
-                }*/
+                }
             } else {
                 if !player.has_folded && !player.is_all_in {
                     if let Some(PlayerAction::Check) = last_action.action {

@@ -6,6 +6,7 @@ mod game_setup;
 mod buttons;
 mod hand_evaluation;
 mod components;
+mod preflop_eval;
 
 use game_setup::*;
 use cards::*;
