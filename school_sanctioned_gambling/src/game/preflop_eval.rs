@@ -1,6 +1,9 @@
 use std::collections::HashMap;
+use super::cards::*;
+use super::components::*;
 use rand::Rng;
 
+/*
 //Declaring Player Struct
 #[derive(Clone, Debug)]
 struct Player{
@@ -18,12 +21,13 @@ impl Player{
             move_dist,
         }
     }
-}
+}*/
 
 
 
 //Stealing this for now 
 //Adding card_strength field
+/*
 #[derive(Copy, Clone, Debug)]
 struct Card {
     card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
@@ -42,18 +46,20 @@ impl Card {
             card_strength: generate_card_strength(value),
         }
     }
-}
+}*/
 
 //Stolen from systems
+/*
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum Suit {
     Hearts,
     Diamonds,
     Spades,
     Clubs
-}
+}*/
 
 //Stolen from moveset
+/*
 #[derive(Copy, Clone, PartialEq, Debug)]
 enum MoveSet {
     Fold,
@@ -61,9 +67,9 @@ enum MoveSet {
     Bet,
     Call, 
     Raise,
-}
+}*/
 //Simply sets Ace to strongest card. All others remain the same
-fn generate_card_strength(val:u8) -> u8{
+pub fn generate_card_strength(val:u8) -> u8{
     if val == 1{
         14
     }else{
@@ -72,12 +78,12 @@ fn generate_card_strength(val:u8) -> u8{
 }
 
 //Generates hand strength from starting hand
-fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
+pub fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
     vec_hand[0].card_strength as u16 + vec_hand[1].card_strength as u16
 }
 
 //Checks rand number w/in ranges to determine move
-fn generate_move(player: Player) -> String{
+pub fn generate_move(player: &Player) -> String{
     let num = rand::thread_rng().gen_range(0..=100);
     
     let chosen_dist = player.move_dist.get(&player.hand_strength);
@@ -96,7 +102,7 @@ fn generate_move(player: Player) -> String{
 //Then fill up hashmap with key value pair
 //Key: Hand strength, value: ranges
 //Returns hashmap
-fn fill_move_set()->HashMap<u16, Vec<u16>>{
+pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
     let mut move_dist = HashMap::new();
     
     //Vector order: fold, call, raise
