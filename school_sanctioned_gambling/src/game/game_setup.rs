@@ -3,6 +3,7 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use rand::Rng;
+use super::preflop_eval::*;
 
 // After each player move check if only one player has not folded, if only one player left instantly skip to them winnning and resetting the hand
 // Add functionality so that if max current_bet > 0 all other players must either fold or have current_bet >= max current_bet
@@ -132,18 +133,34 @@ fn process_player_turn(
     state: &mut ResMut<PokerTurn>,
     player_entity_query: &mut Query<(Entity, &mut Player)>,
     player_count: &ResMut<NumPlayers>,
-    last_action: ResMut<LastPlayerAction>,
+    mut last_action: ResMut<LastPlayerAction>,
 ) {
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
             if player.player_id != 0 {
+                //once the generate move is completely working this should be the code for the AI decisions
+                /*if !player.has_folded && !player.is_all_in {
+                    let player_move: String = generate_move(&player);
+                    if player_move == "Raise" {
+                        raise_action(state, player, player_count, &mut last_action);
+                    }
+                    else if player_move == "Call" {
+                        call_action(state, player, player_count, &mut last_action);
+                    }
+                    else if player_move == "Fold" {
+                        fold_action(state, player, player_count, &mut last_action);
+                    }
+                    else {
+                        check_action(state, player, player_count, &mut last_action);
+                    }
+                }*/
                 if !player.has_folded && !player.is_all_in {
                     let mut rng = rand::thread_rng();
                     if rng.gen_bool(0.2) {
-                        player_raised = raise_action(state, player, player_count, last_action,);
+                        player_raised = raise_action(state, player, player_count, &mut last_action,);
                     } else {
-                        check_action(state, player, player_count, last_action);
+                        check_action(state, player, player_count, &mut last_action);
                     }
                     break;
                 } else {
@@ -153,16 +170,16 @@ fn process_player_turn(
             } else {
                 if !player.has_folded && !player.is_all_in {
                     if let Some(PlayerAction::Check) = last_action.action {
-                        check_action(state, player, player_count, last_action);
+                        check_action(state, player, player_count, &mut last_action);
                         break;
                     } else if let Some(PlayerAction::Raise) = last_action.action {
-                        player_raised = raise_action(state, player, player_count, last_action,);
+                        player_raised = raise_action(state, player, player_count, &mut last_action,);
                         break;
                     } else if let Some(PlayerAction::Fold) = last_action.action {
-                        fold_action(state, player, player_count, last_action);
+                        fold_action(state, player, player_count, &mut last_action);
                         break;
                     } else if let Some(PlayerAction::Call) = last_action.action {
-                        call_action(state, player, player_count, last_action);
+                        call_action(state, player, player_count, &mut last_action);
                         break;
                     }
                 } else {
@@ -187,7 +204,7 @@ pub fn check_action (
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
-    mut last_action: ResMut<'_, LastPlayerAction>,
+    last_action: &mut ResMut<'_, LastPlayerAction>,
 ) {
     if state.current_top_bet > 0 {
         println!("Cannot check since top_bet is > {}!", state.current_top_bet);
@@ -206,7 +223,7 @@ pub fn raise_action (
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
-    mut last_action: ResMut<'_, LastPlayerAction>,
+    last_action: &mut ResMut<'_, LastPlayerAction>,
 ) -> bool {
     if player.cash >= (state.current_top_bet + 50) - player.current_bet {
         state.pot += (state.current_top_bet + 50) - player.current_bet;
@@ -236,7 +253,7 @@ pub fn fold_action(
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
-    mut last_action: ResMut<'_, LastPlayerAction>,
+    last_action: &mut ResMut<'_, LastPlayerAction>,
 ) {
     println!("Player {} has folded!", player.player_id);
     player.has_moved = true;
@@ -251,7 +268,7 @@ pub fn call_action(
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
-    mut last_action: ResMut<'_, LastPlayerAction>,
+    last_action: &mut ResMut<'_, LastPlayerAction>,
 ) {
     if player.cash >= state.current_top_bet - player.current_bet {
         println!("Player {} has called!", player.player_id);

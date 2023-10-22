@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::collections::HashMap;
 use super::cards::*;
 
 #[derive(Component)]
@@ -38,6 +39,8 @@ pub struct Player {
     pub has_moved: bool,
     pub is_all_in: bool,
     pub has_raised: bool,
+    pub hand_strength: u16,
+    pub move_dist: HashMap<u16, Vec<u16>>,
 }
 
 #[derive(Component)]

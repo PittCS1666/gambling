@@ -3,6 +3,8 @@ use rand::thread_rng;
 use rand::seq::SliceRandom;
 use bevy::prelude::*;
 use super::hand_evaluation::*;
+use super::preflop_eval::*;
+
 pub struct Deck {
     pub cards: Vec<Card>
 }
@@ -28,6 +30,7 @@ pub struct Card {
     pub _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
     pub suit: Suit,
     pub value: u8, // ace: 1, 2: 2, ..., 10: 10, jack: 11, queen: 12, king: 13
+    pub card_strength: u8,  //this is the value but it concerts the ace to be 14 instead of 1
 }
 
 impl Card {
@@ -36,6 +39,7 @@ impl Card {
             _card_id,
             suit,
             value,
+            card_strength: generate_card_strength(value),
         }
     }
 
@@ -95,7 +99,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
-        result.push(Player { player_id, cards: hand, cash: 500, current_bet: 0, has_folded: false, has_moved: false, is_all_in: false, has_raised: false,});
+        result.push(Player { player_id, cards: hand.clone(), cash: 500, current_bet: 0, has_folded: false, has_moved: false, is_all_in: false, has_raised: false, hand_strength: generate_hand_strength(&hand), move_dist: fill_move_set(),});
     }
     result
 }
@@ -177,6 +181,8 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 has_moved: player.has_moved,
                 is_all_in: player.is_all_in,
                 has_raised: player.has_raised,
+                hand_strength: generate_hand_strength(&player.cards),
+                move_dist: fill_move_set(),
             });
         }
 
