@@ -123,7 +123,7 @@ pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&Communi
 pub fn card_function(
     community_query: &Query<&CommunityCards>,
     players: &Vec<&Player>,
-) {
+) -> usize {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
     let mut hand1: Hand = Hand::_new_blank();
@@ -131,9 +131,6 @@ pub fn card_function(
     // Iterate through each player
     for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
-
-        
-
         // Ensure there are at least 5 cards between the player and community cards before evaluation
         if player_cards.len() + community_cards.len() >= 5 {
             let hand = test_evaluator(player_cards_component.player_id, player_cards.to_vec(), community_cards.to_vec());
@@ -148,13 +145,13 @@ pub fn card_function(
     
     let comparison = compare_hands(&mut hand1, &mut hand2);
     if comparison == 1 {
-        println!("Player 0 wins with a score of {}\n", hand1.score);
+        return 0;
     }
     else if comparison == 2 {
-        println!("Player 1 wins with a score of {}\n", hand2.score);
+        return 1;
     }
     else {
-        println!("It's a draw!\n");
+        return 2;
     }
 }
 
@@ -249,7 +246,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
                 },
                 ..Default::default()
-            });
+            }).insert(VisPlayerCash);
         }
 }
 
