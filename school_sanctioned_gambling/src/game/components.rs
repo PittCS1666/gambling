@@ -41,7 +41,12 @@ pub struct Player {
     pub has_raised: bool,
     pub hand_strength: u16,
     pub move_dist: HashMap<u16, Vec<u16>>,
+    pub big_blind: bool,
+    pub small_blind: bool,
 }
+
+#[derive(Component)]
+pub struct Blind;
 
 #[derive(Component)]
 pub struct CommunityCards {
@@ -63,6 +68,10 @@ pub struct PokerTurn {
     pub round_started: bool,
     pub pot: usize,
     pub current_top_bet: usize,
+    pub small_blind: usize,
+    pub big_blind: usize,
+    pub small_blind_val: usize,
+    pub big_blind_val: usize,
 }
 impl Resource for PokerTurn {
 }

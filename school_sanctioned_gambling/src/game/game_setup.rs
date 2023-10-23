@@ -25,7 +25,6 @@ const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
 const PLAYER_BLIND_POS: (f32, f32, f32) = (140., -220., 2.);
 
-
 pub fn load_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -43,7 +42,6 @@ pub fn load_game(
 
 fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, player_num: &Res<NumPlayers>) {
     let ai_pos: Vec<(f32, f32, f32)> = vec![(225., 170., 2.), (435., 10., 2.), (-140., -175., 2.), (-435., 10., 2.), (-225., 170., 2.)];
-    let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
 
     //spawn player in the same spot every game
     commands.spawn(SpriteBundle {
@@ -57,7 +55,7 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
     })
     .with_children(|parent| {
         parent.spawn(Text2dBundle {
-                text: Text::from_section("You", 
+                text: Text::from_section("You",
                 TextStyle {
                     font: asset_server.load("fonts/Lato-Black.ttf"),
                     font_size: 30.0,
@@ -68,15 +66,7 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
         });
     });
 
-    commands.spawn(Text2dBundle {
-        text: Text::from_section("SB", TextStyle {
-            font: asset_server.load("fonts/Lato-Black.ttf"),
-            font_size: 25.,
-            color: Color::WHITE,
-        }),
-        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
-        ..default()
-    });
+    
 
     //spawn the AI players
     for i in 0..player_num.player_count - 1 {
@@ -91,7 +81,7 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
         })
         .with_children(|parent| {
             parent.spawn(Text2dBundle {
-                    text: Text::from_section(String::from("AI ") + &(i + 1).to_string(), 
+                    text: Text::from_section(String::from("AI ") + &(i + 1).to_string(),
                     TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 30.0,
@@ -102,15 +92,6 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
             });
         });
 
-        commands.spawn(Text2dBundle {
-            text: Text::from_section("SB", TextStyle {
-                font: asset_server.load("fonts/Lato-Black.ttf"),
-                font_size: 25.,
-                color: Color::WHITE,
-            }),
-            transform: Transform::from_xyz(ai_blind_pos[i].0, ai_blind_pos[i].1, ai_blind_pos[i].2),
-            ..default()
-        });
     }
     
 }
@@ -222,8 +203,8 @@ pub fn check_action (
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
 ) {
-    if state.current_top_bet > 0 {
-        println!("Cannot check since top_bet is > {}!", state.current_top_bet);
+    if state.current_top_bet > player.current_bet {
+        println!("Cannot check since top_bet ({}) is > your current bet ({})!", state.current_top_bet, player.current_bet);
         if player.player_id == 0 {
             last_action.action = Some(PlayerAction::None);
         }
@@ -325,8 +306,11 @@ pub fn turn_system(
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     last_action: ResMut<LastPlayerAction>,
+    mut blind_text_query: Query<Entity, With<Blind>>,
     mut app_state_next_state: ResMut<NextState<AppState>>
 ) {
+  
+  let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
 
     let current_player_moved = player_entity_query.iter()
         .find_map(|(_entity, player)| {
@@ -350,14 +334,92 @@ pub fn turn_system(
 
     match state.phase {
         PokerPhase::PreFlop => {
-            if !state.round_started {
-                println!("Phase is now in PreFlop!");
-                let cards = &mut deck.cards;
-                shuffle_cards(cards);
-                let players_hands = deal_hands(player_count.player_count, cards);
-                spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
-                state.round_started = true;
-            }
+                if !state.round_started {
+                    println!("Phase is now in PreFlop!");
+                    let cards = &mut deck.cards;
+                    shuffle_cards(cards);
+                    let players_hands = deal_hands(player_count.player_count, cards);
+                    spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
+                    
+                    
+                    //loops through the players to find the big and small blinds
+                    for (_, mut player) in player_entity_query.iter_mut() {
+                        if player.player_id == state.small_blind {
+                            player.small_blind = true;
+                            player.cash -= state.small_blind_val;
+                            player.current_bet = state.small_blind_val;
+                            state.pot += state.small_blind_val;
+                            
+                            //spawn the blind text
+                            if player.player_id == 0 {
+                                commands.spawn(Text2dBundle {
+                                    text: Text::from_section("SB", TextStyle {
+                                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                                        font_size: 25.,
+                                        color: Color::WHITE,
+                                    }),
+                                    transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                                    ..default()
+                                })
+                                .insert(Blind);
+                            }
+                            else {
+                                commands.spawn(Text2dBundle {
+                                    text: Text::from_section("SB", TextStyle {
+                                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                                        font_size: 25.,
+                                        color: Color::WHITE,
+                                    }),
+                                    transform: Transform::from_xyz(
+                                        ai_blind_pos[player.player_id - 1].0,
+                                        ai_blind_pos[player.player_id - 1].1,
+                                        ai_blind_pos[player.player_id - 1].2),
+                                    ..default()
+                                })
+                                .insert(Blind);
+                            }
+                        }
+                        else if player.player_id == state.big_blind {
+                            player.big_blind = true;
+                            player.cash -= state.big_blind;
+                            player.current_bet = state.big_blind_val;
+                            state.pot += state.big_blind_val;
+                            state.current_top_bet = state.big_blind_val;
+
+                            //spawn blind text
+                            if player.player_id == 0 {
+                                commands.spawn(Text2dBundle {
+                                    text: Text::from_section("BB", TextStyle {
+                                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                                        font_size: 25.,
+                                        color: Color::WHITE,
+                                    }),
+                                    transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                                    ..default()
+                                })
+                                .insert(Blind);
+                            }
+                            else {
+                                commands.spawn(Text2dBundle {
+                                    text: Text::from_section("BB", TextStyle {
+                                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                                        font_size: 25.,
+                                        color: Color::WHITE,
+                                    }),
+                                    transform: Transform::from_xyz(
+                                        ai_blind_pos[player.player_id - 1].0,
+                                        ai_blind_pos[player.player_id - 1].1,
+                                        ai_blind_pos[player.player_id - 1].2),
+                                    ..default()
+                                })
+                                .insert(Blind);
+                            }
+                        }
+                    }
+                    println!("Pot is: {}", state.pot);
+                    state.round_started = true;
+                    state.current_player = (state.big_blind + 1) % player_count.player_count;
+                }
 
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
@@ -418,7 +480,13 @@ pub fn turn_system(
 
             state.pot = 0;
             state.current_top_bet = 0;
-            state.current_player = (state.current_player + 1) % player_count.player_count;
+            state.small_blind = (state.small_blind + 1) % player_count.player_count;
+            state.big_blind = (state.big_blind + 1) % player_count.player_count;
+            state.current_player = state.big_blind + 1 % player_count.player_count;
+
+            for blind in blind_text_query.iter_mut() {
+                commands.entity(blind).despawn_recursive();
+            }
 
 
             for (_, mut player) in player_entity_query.iter_mut() {
@@ -427,6 +495,8 @@ pub fn turn_system(
                 player.has_moved = false;
                 player.is_all_in = false;
                 player.has_raised = false;
+                player.small_blind = false;
+                player.big_blind = false;
             }
 
             state.round_started = false;
@@ -452,7 +522,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
-                }        
+                }
                 state.phase = PokerPhase::Flop;
                 state.current_top_bet = 0;
             }
