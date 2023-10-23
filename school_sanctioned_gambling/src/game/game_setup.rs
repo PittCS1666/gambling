@@ -2,29 +2,126 @@ use bevy::prelude::*;
 use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
-use crate:: AppState
+use rand::Rng;
+use super::preflop_eval::*;
+use crate::AppState;
 
-pub fn load_game(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.insert_resource(init_cards_resource());
+// After each player move check if only one player has not folded, if only one player left instantly skip to them winnning and resetting the hand
+// Add functionality so that if max current_bet > 0 all other players must either fold or have current_bet >= max current_bet
+// Add easy AI choices
+// Add win state/end of game
+// Add checks to make sure player doesn't go to negative on raise/call (call on all in will have special circumstances)
+// If player has no more to bet and hits 0 during a round force them to always have_moved and also allow them to pass any additional bets
+// Look at logic for additional bets after a player has gone all in if more than one player is matching the all in bet
+// Add visuals for spawning other players at table depending on amount of players
+// Add visuals to change cash amount in corner and also add pot amount somewhere on screen
+// Add visuals to players to signify what action they took
+// Add visuals to signify current bet needed
+// Add delay of AI to make it seem like AI Players are thinking
+// Add logic to pull certain values from options screen
+// Add small blind and big blinds plus logic
+
+const PLAYER_SIZE: f32 =  60.;
+const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
+const PLAYER_BLIND_POS: (f32, f32, f32) = (140., -220., 2.);
+
+
+pub fn load_game(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    player_num: Res<NumPlayers>,
+) {
     commands.spawn(SpriteBundle {
         texture: asset_server.load("game_screen.png"),
         transform: Transform::from_xyz(0., 0., 1.),
         ..default()
     }).insert(Background);
-    spawn_buttons(&mut commands, &asset_server);
+    
+    spawn_option_buttons(&mut commands, &asset_server);
+    spawn_players(&mut commands, &asset_server, &player_num);
+}
+
+fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, player_num: &Res<NumPlayers>) {
+    let ai_pos: Vec<(f32, f32, f32)> = vec![(225., 170., 2.), (435., 10., 2.), (-140., -175., 2.), (-435., 10., 2.), (-225., 170., 2.)];
+    let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
+
+    //spawn player in the same spot every game
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::WHITE,
+            custom_size: Some(Vec2::splat(PLAYER_SIZE)),
+            ..default()
+        },
+        transform: Transform::from_xyz(PLAYER_POS.0, PLAYER_POS.1, PLAYER_POS.2),
+        ..default()
+    })
+    .with_children(|parent| {
+        parent.spawn(Text2dBundle {
+                text: Text::from_section("You", 
+                TextStyle {
+                    font: asset_server.load("fonts/Lato-Black.ttf"),
+                    font_size: 30.0,
+                    color: Color::BLACK,
+                }),
+                transform: Transform::from_xyz(0., 0., 3.),
+                ..default()
+        });
+    });
+
+    commands.spawn(Text2dBundle {
+        text: Text::from_section("SB", TextStyle {
+            font: asset_server.load("fonts/Lato-Black.ttf"),
+            font_size: 25.,
+            color: Color::WHITE,
+        }),
+        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+        ..default()
+    });
+
+    //spawn the AI players
+    for i in 0..player_num.player_count - 1 {
+        commands.spawn(SpriteBundle {
+            sprite: Sprite {
+                color: Color::WHITE,
+                custom_size: Some(Vec2::splat(PLAYER_SIZE)),
+                ..default()
+            },
+            transform: Transform::from_xyz(ai_pos[i].0, ai_pos[i].1, ai_pos[i].2),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn(Text2dBundle {
+                    text: Text::from_section(String::from("AI ") + &(i + 1).to_string(), 
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 30.0,
+                        color: Color::BLACK,
+                    }),
+                    transform: Transform::from_xyz(0., 0., 3.),
+                    ..default()
+            });
+        });
+
+        commands.spawn(Text2dBundle {
+            text: Text::from_section("SB", TextStyle {
+                font: asset_server.load("fonts/Lato-Black.ttf"),
+                font_size: 25.,
+                color: Color::WHITE,
+            }),
+            transform: Transform::from_xyz(ai_blind_pos[i].0, ai_blind_pos[i].1, ai_blind_pos[i].2),
+            ..default()
+        });
+    }
+    
 }
 
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
-<<<<<<< Updated upstream
-    mut node_query: Query<Entity, With<NBundle>>,) 
-=======
     mut node_query: Query<Entity, With<NBundle>>,
     mut player_entity_query: Query<(Entity, &mut Player)>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     mut com_entity_query: Query<Entity, With<CommunityCards>>,) 
->>>>>>> Stashed changes
 {
     let node = node_query.single_mut();
 
@@ -33,9 +130,6 @@ pub fn tear_down_game_screen(
     let background = background_query.single_mut();
     
     commands.entity(background).despawn_recursive();
-<<<<<<< Updated upstream
-    //commands.entity(exit_button).despawn_recursive();
-=======
 
     //let player_entity = player_entity_query.single_mut();
 
@@ -394,5 +488,4 @@ fn next_player_turn(
             PokerPhase::Showdown => {}
         }
     }
->>>>>>> Stashed changes
 }
