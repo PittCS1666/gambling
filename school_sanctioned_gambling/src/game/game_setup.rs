@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
+use crate:: AppState
 
 pub fn load_game(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(init_cards_resource());
