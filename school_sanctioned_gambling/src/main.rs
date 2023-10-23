@@ -10,7 +10,7 @@ use game::*;
 use menu::*;
 use credits::*;
 use options::*;
-use networking*;
+use networking::*;
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
