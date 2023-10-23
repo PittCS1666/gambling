@@ -30,6 +30,15 @@ pub struct NCards;
 pub struct VisPlayerCards;
 
 #[derive(Component)]
+pub struct VisPlayers;
+
+#[derive(Component)]
+pub struct VisPlayerCash;
+
+#[derive(Component)]
+pub struct Blinds;
+
+#[derive(Component)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -96,4 +105,16 @@ pub enum PlayerAction {
     Fold,
     Call,
     None,
+}
+
+#[derive(Component, Default, Debug)]
+pub struct TextBox {
+    pub active: bool,
+    pub id: u32,
+    pub text_style: TextStyle,
+}
+
+#[derive(Component)]
+pub struct TextBoxTag {
+    pub id: u32,
 }

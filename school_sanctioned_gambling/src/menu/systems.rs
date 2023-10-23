@@ -2,8 +2,14 @@ use bevy::prelude::*;
 use super::components::*;
 use crate::AppState;
 
-pub fn load_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+pub fn load_menu(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    camera_query: Query<Entity, With<Camera>>,
+) {
+    if !(camera_query.iter().next().is_some()) {
+        commands.spawn(Camera2dBundle::default()).insert(Camera);
+    }
     spawn_background(&mut commands, &asset_server);
     spawn_buttons(&mut commands, &asset_server);
 }

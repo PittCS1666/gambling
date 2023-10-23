@@ -3,23 +3,8 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use rand::Rng;
-use super::preflop_eval::*;
+// use super::preflop_eval::*;
 use crate::AppState;
-
-// After each player move check if only one player has not folded, if only one player left instantly skip to them winnning and resetting the hand
-// Add functionality so that if max current_bet > 0 all other players must either fold or have current_bet >= max current_bet
-// Add easy AI choices
-// Add win state/end of game
-// Add checks to make sure player doesn't go to negative on raise/call (call on all in will have special circumstances)
-// If player has no more to bet and hits 0 during a round force them to always have_moved and also allow them to pass any additional bets
-// Look at logic for additional bets after a player has gone all in if more than one player is matching the all in bet
-// Add visuals for spawning other players at table depending on amount of players
-// Add visuals to change cash amount in corner and also add pot amount somewhere on screen
-// Add visuals to players to signify what action they took
-// Add visuals to signify current bet needed
-// Add delay of AI to make it seem like AI Players are thinking
-// Add logic to pull certain values from options screen
-// Add small blind and big blinds plus logic
 
 const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
@@ -52,7 +37,7 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
         },
         transform: Transform::from_xyz(PLAYER_POS.0, PLAYER_POS.1, PLAYER_POS.2),
         ..default()
-    })
+    }).insert(VisPlayers)
     .with_children(|parent| {
         parent.spawn(Text2dBundle {
                 text: Text::from_section("You",
@@ -66,8 +51,6 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
         });
     });
 
-    
-
     //spawn the AI players
     for i in 0..player_num.player_count - 1 {
         commands.spawn(SpriteBundle {
@@ -78,7 +61,7 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
             },
             transform: Transform::from_xyz(ai_pos[i].0, ai_pos[i].1, ai_pos[i].2),
             ..default()
-        })
+        }).insert(VisPlayers)
         .with_children(|parent| {
             parent.spawn(Text2dBundle {
                     text: Text::from_section(String::from("AI ") + &(i + 1).to_string(),
@@ -91,38 +74,61 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
                     ..default()
             });
         });
-
     }
-    
 }
 
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
     mut node_query: Query<Entity, With<NBundle>>,
-    mut player_entity_query: Query<(Entity, &mut Player)>,
+    player_entity_query: Query<Entity,  With<Player>>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
-    mut com_entity_query: Query<Entity, With<CommunityCards>>,
+    com_entity_query: Query<Entity, With<CommunityCards>>,
+    vis_player_query: Query<Entity, With<VisPlayers>>,
+    blinds_query: Query<Entity, With<Blinds>>,
+    vis_cash_query: Query<Entity, With<VisPlayerCash>>,
 ) {
     let node = node_query.single_mut();
 
     commands.entity(node).despawn_recursive();
-
     let background = background_query.single_mut();
     
     commands.entity(background).despawn_recursive();
 
-    //let player_entity = player_entity_query.single_mut();
+    if blinds_query.iter().next().is_some() {
+        for entity in blinds_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 
-    //commands.entity(player_entity).despawn_recursive();
+    if player_entity_query.iter().next().is_some() {
+        for entity in blinds_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 
-    let player_card = player_card_query.single_mut();
+    if vis_cash_query.iter().next().is_some() {
+        for entity in vis_cash_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 
-    commands.entity(player_card).despawn_recursive();
+    if player_card_query.iter().next().is_some() {
+        let player_card = player_card_query.single_mut(); 
+        commands.entity(player_card).despawn_recursive();
+    }
 
-    let com = com_entity_query.single_mut();
-
-    commands.entity(com).despawn_recursive();
+    if vis_player_query.iter().next().is_some() {
+        for entity in vis_player_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+   
+    if com_entity_query.iter().next().is_some() {
+        for entity in com_entity_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }
 
 fn process_player_turn(
@@ -155,7 +161,7 @@ fn process_player_turn(
                 if !player.has_folded && !player.is_all_in {
                     let mut rng = rand::thread_rng();
                     if rng.gen_bool(0.2) {
-                        player_raised = raise_action(state, player, player_count, &mut last_action,);
+                        call_action(state, player, player_count, &mut last_action,);
                     } else {
                         check_action(state, player, player_count, &mut last_action);
                     }
@@ -302,7 +308,7 @@ pub fn turn_system(
     mut player_entity_query: Query<(Entity, &mut Player)>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     community_query: Query<&CommunityCards>,
-    mut com_entity_query: Query<Entity, With<CommunityCards>>,
+    com_entity_query: Query<Entity, With<CommunityCards>>,
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     last_action: ResMut<LastPlayerAction>,
@@ -321,7 +327,7 @@ pub fn turn_system(
             }
         }).unwrap_or(false);
     let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
-        if players_no_cash == player_count.player_count - 1{
+    if players_no_cash == 1 {
         println!("Only one player with money left game over");
         app_state_next_state.set(AppState::MainMenu);
     }
@@ -465,7 +471,7 @@ pub fn turn_system(
         PokerPhase::Showdown => {
             // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
             // and remove the entities so that player_entity_query can be used in this instance
-            card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
+            let winner = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
 
             // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
@@ -476,7 +482,22 @@ pub fn turn_system(
                 commands.entity(entity).despawn();
             }
 
-            println!("The pot won equals {}", state.pot);
+            for (_, mut player) in player_entity_query.iter_mut() {
+                if winner == 0 {
+                    if player.player_id == 0 {
+                        println!("Player 0 wins and gains a pot of {}\n", state.pot);
+                        player.cash += state.pot;
+                    }
+                } else if winner == 1 {
+                    if player.player_id == 1 {
+                        println!("Player 1 wins and gains a pot of {}\n", state.pot);
+                        player.cash += state.pot;
+                    }
+                } else {
+                    println!("Player {} ties and gains a pot of {}\n", player.player_id, state.pot/player_count.player_count);
+                    player.cash += state.pot/player_count.player_count;
+                }
+           }
 
             state.pot = 0;
             state.current_top_bet = 0;
