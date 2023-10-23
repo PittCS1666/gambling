@@ -3,7 +3,7 @@ use rand::thread_rng;
 use rand::seq::SliceRandom;
 use bevy::prelude::*;
 use super::hand_evaluation::*;
-use super::preflop_eval::*;
+use super::easy_ai_logic::*;
 
 pub struct Deck {
     pub cards: Vec<Card>

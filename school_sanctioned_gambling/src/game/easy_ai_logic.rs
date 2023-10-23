@@ -85,30 +85,30 @@ pub fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
 //Checks rand number w/in ranges to determine move
 pub fn generate_move(player: &Player, poker_turn: PokerTurn) -> String{
     //Check for poker phase
-    let mut num = 101;
+    let mut _num = 101;
     let chosen_dist = player.move_dist.get(&player.hand_strength);
 
     if poker_turn.phase == PokerPhase::PreFlop{
         if player.is_big_blind && !poker_turn.pot_raised {
-            let num = rand::thread_rng().gen_range(0..=100);
+            let _num = rand::thread_rng().gen_range(0..=100);
         }else{
-            let num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+            let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else if poker_turn.phase == PokerPhase::Flop || poker_turn.phase == PokerPhase::Turn || poker_turn.phase == PokerPhase::River{
         if !poker_turn.bet_made{
-            let num = rand::thread_rng().gen_range(0..=100);
+            let _num = rand::thread_rng().gen_range(0..=100);
         }else{
-            let num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+            let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else{
-        let num = rand::thread_rng().gen_range(0..=100);
+        let _num = rand::thread_rng().gen_range(0..=100);
     }
 
-    if num <= chosen_dist.unwrap()[0]{
+    if _num <= chosen_dist.unwrap()[0]{
         "Check".to_string()
-    }else if num <= chosen_dist.unwrap()[1]{
+    }else if _num <= chosen_dist.unwrap()[1]{
         "Fold".to_string()
-    }else if num <= chosen_dist.unwrap()[2]{
+    }else if _num <= chosen_dist.unwrap()[2]{
         "Call".to_string()
     }else{
         "Raise".to_string()

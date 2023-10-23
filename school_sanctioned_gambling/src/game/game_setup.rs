@@ -3,7 +3,7 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use rand::Rng;
-use super::preflop_eval::*;
+use super::easy_ai_logic::*;
 use crate::AppState;
 
 // After each player move check if only one player has not folded, if only one player left instantly skip to them winnning and resetting the hand
