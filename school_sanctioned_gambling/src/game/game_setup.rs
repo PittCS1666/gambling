@@ -121,8 +121,8 @@ pub fn tear_down_game_screen(
     mut node_query: Query<Entity, With<NBundle>>,
     mut player_entity_query: Query<(Entity, &mut Player)>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
-    mut com_entity_query: Query<Entity, With<CommunityCards>>,
-) {
+    mut com_entity_query: Query<Entity, With<CommunityCards>>,) 
+{
     let node = node_query.single_mut();
 
     commands.entity(node).despawn_recursive();
@@ -336,6 +336,8 @@ pub fn turn_system(
                 None
             }
         }).unwrap_or(false);
+
+    
     let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
         if players_no_cash == player_count.player_count - 1{
         println!("Only one player with money left game over");

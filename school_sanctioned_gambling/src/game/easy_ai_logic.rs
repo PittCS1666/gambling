@@ -83,18 +83,36 @@ pub fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
 }
 
 //Checks rand number w/in ranges to determine move
-pub fn generate_move(player: &Player) -> String{
-    let num = rand::thread_rng().gen_range(0..=100);
-    
+pub fn generate_move(player: &Player, poker_turn: PokerTurn) -> String{
+    //Check for poker phase
+    let mut num = 101;
     let chosen_dist = player.move_dist.get(&player.hand_strength);
 
+    if poker_turn.phase == PokerPhase::PreFlop{
+        if player.is_big_blind && !poker_turn.pot_raised {
+            let num = rand::thread_rng().gen_range(0..=100);
+        }else{
+            let num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+        }
+    }else if poker_turn.phase == PokerPhase::Flop || poker_turn.phase == PokerPhase::Turn || poker_turn.phase == PokerPhase::River{
+        if !poker_turn.bet_made{
+            let num = rand::thread_rng().gen_range(0..=100);
+        }else{
+            let num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+        }
+    }else{
+        let num = rand::thread_rng().gen_range(0..=100);
+    }
+
     if num <= chosen_dist.unwrap()[0]{
-        "Fold".to_string()
+        "Check".to_string()
     }else if num <= chosen_dist.unwrap()[1]{
+        "Fold".to_string()
+    }else if num <= chosen_dist.unwrap()[2]{
         "Call".to_string()
     }else{
         "Raise".to_string()
-    } 
+    }
 
 }
 
@@ -105,35 +123,35 @@ pub fn generate_move(player: &Player) -> String{
 pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
     let mut move_dist = HashMap::new();
     
-    //Vector order: fold, call, raise
+    //Vector order: check, fold, call, raise
    let mut vec_of_dists: Vec<Vec<u16>> = vec![
 
-        vec![60, 85, 100], //Hand Strength: 2
-        vec![58, 85, 100], //4
-        vec![58, 85, 100], //5
-        vec![56, 84, 100], //6
-        vec![54, 83, 100],
-        vec![50, 82, 100], //8
-        vec![50, 82, 100],
-        vec![49, 82, 100], //10
-        vec![48, 82, 100],
-        vec![46, 82, 100], //12
-        vec![45, 81, 100],
-        vec![39, 79, 100], //14
-        vec![39, 79, 100],
-        vec![39, 79, 100], //16
-        vec![38, 79, 100],
-        vec![38, 78, 100], //18
-        vec![38, 78, 100],
-        vec![37, 77, 100], //20
-        vec![37, 77, 100],
-        vec![36, 78, 100], //22
-        vec![34, 77, 100],
-        vec![30, 75, 100], //24
-        vec![28, 75, 100],
-        vec![27, 74, 100], //26
-        vec![23, 70, 100],
-        vec![19, 69, 100], //28
+        vec![35, 60, 85, 100], //Hand Strength: 2
+        vec![35, 58, 85, 100], //4
+        vec![34, 58, 85, 100], //5
+        vec![34, 56, 84, 100], //6
+        vec![34, 54, 83, 100],
+        vec![33, 50, 82, 100], //8
+        vec![33, 50, 82, 100],
+        vec![33, 49, 82, 100], //10
+        vec![33, 48, 82, 100],
+        vec![31, 46, 82, 100], //12
+        vec![30, 45, 81, 100],
+        vec![29, 39, 79, 100], //14
+        vec![29, 39, 79, 100],
+        vec![28, 39, 79, 100], //16
+        vec![27, 38, 79, 100],
+        vec![27, 38, 78, 100], //18
+        vec![25, 38, 78, 100],
+        vec![23, 37, 77, 100], //20
+        vec![23, 37, 77, 100],
+        vec![21, 36, 78, 100], //22
+        vec![20, 34, 77, 100],
+        vec![18, 30, 75, 100], //24
+        vec![18, 28, 75, 100],
+        vec![18, 27, 74, 100], //26
+        vec![17, 23, 70, 100],
+        vec![14, 19, 69, 100], //28
 
    ];
 
