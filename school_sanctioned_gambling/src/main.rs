@@ -4,11 +4,13 @@ mod credits;
 mod menu;
 mod game;
 mod options;
+mod networking;
 
 use game::*;
 use menu::*;
 use credits::*;
 use options::*;
+use networking*;
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
@@ -21,6 +23,8 @@ pub enum AppState {
     MainMenu,
     LocalPlay,
     OnlinePlay,
+    OnlineServer,
+    OnlineClient,
     Credits,
     Options,
 }
@@ -42,6 +46,7 @@ fn main() {
             CreditsPlugin,
             GamePlugin,
             OptionsPlugin,
+            NetworkingPlugin,
         ))
         .run();
 }
