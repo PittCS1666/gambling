@@ -3,8 +3,9 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use rand::Rng;
-// use super::preflop_eval::*;
+use bevy::text::BreakLineOn;
 use crate::AppState;
+use bevy::input::keyboard::KeyboardInput;
 
 const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
@@ -228,9 +229,8 @@ pub fn raise_action (
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
 ) -> bool {
-    if player.cash >= (state.current_top_bet + 50) - player.current_bet {
-        state.pot += (state.current_top_bet + 50) - player.current_bet;
-        state.current_top_bet += 50;
+    if player.cash >= state.current_top_bet - player.current_bet {
+        state.pot += state.current_top_bet - player.current_bet;
         println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
         player.has_moved = true;
         player.has_raised = true;
@@ -341,89 +341,93 @@ pub fn turn_system(
     match state.phase {
         PokerPhase::PreFlop => {
                 if !state.round_started {
-                    println!("Phase is now in PreFlop!");
-                    let cards = &mut deck.cards;
-                    shuffle_cards(cards);
-                    let players_hands = deal_hands(player_count.player_count, cards);
-                    spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
+                    if player_entity_query.iter().count() == 0 {
+                        println!("Phase is now in PreFlop!");
+                        let cards = &mut deck.cards;
+                        shuffle_cards(cards);
+                        let players_hands = deal_hands(player_count.player_count, cards);
+                        spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
+                    }
                     
                     
                     //loops through the players to find the big and small blinds
-                    for (_, mut player) in player_entity_query.iter_mut() {
-                        if player.player_id == state.small_blind {
-                            player.small_blind = true;
-                            player.cash -= state.small_blind_val;
-                            player.current_bet = state.small_blind_val;
-                            state.pot += state.small_blind_val;
-                            
-                            //spawn the blind text
-                            if player.player_id == 0 {
-                                commands.spawn(Text2dBundle {
-                                    text: Text::from_section("SB", TextStyle {
-                                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                                        font_size: 25.,
-                                        color: Color::WHITE,
-                                    }),
-                                    transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
-                                    ..default()
-                                })
-                                .insert(Blind);
+                    if player_entity_query.iter().count() > 0 {
+                        for (_, mut player) in player_entity_query.iter_mut() {
+                            if player.player_id == state.small_blind {
+                                player.small_blind = true;
+                                player.cash -= state.small_blind_val;
+                                player.current_bet = state.small_blind_val;
+                                state.pot += state.small_blind_val;
+                                
+                                //spawn the blind text
+                                if player.player_id == 0 {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("SB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
+                                        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                                        ..default()
+                                    })
+                                    .insert(Blind);
+                                }
+                                else {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("SB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
+                                        transform: Transform::from_xyz(
+                                            ai_blind_pos[player.player_id - 1].0,
+                                            ai_blind_pos[player.player_id - 1].1,
+                                            ai_blind_pos[player.player_id - 1].2),
+                                        ..default()
+                                    })
+                                    .insert(Blind);
+                                }
                             }
-                            else {
-                                commands.spawn(Text2dBundle {
-                                    text: Text::from_section("SB", TextStyle {
-                                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                                        font_size: 25.,
-                                        color: Color::WHITE,
-                                    }),
-                                    transform: Transform::from_xyz(
-                                        ai_blind_pos[player.player_id - 1].0,
-                                        ai_blind_pos[player.player_id - 1].1,
-                                        ai_blind_pos[player.player_id - 1].2),
-                                    ..default()
-                                })
-                                .insert(Blind);
-                            }
-                        }
-                        else if player.player_id == state.big_blind {
-                            player.big_blind = true;
-                            player.cash -= state.big_blind;
-                            player.current_bet = state.big_blind_val;
-                            state.pot += state.big_blind_val;
-                            state.current_top_bet = state.big_blind_val;
+                            else if player.player_id == state.big_blind {
+                                player.big_blind = true;
+                                player.cash -= state.big_blind;
+                                player.current_bet = state.big_blind_val;
+                                state.pot += state.big_blind_val;
+                                state.current_top_bet = state.big_blind_val;
 
-                            //spawn blind text
-                            if player.player_id == 0 {
-                                commands.spawn(Text2dBundle {
-                                    text: Text::from_section("BB", TextStyle {
-                                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                                        font_size: 25.,
-                                        color: Color::WHITE,
-                                    }),
-                                    transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
-                                    ..default()
-                                })
-                                .insert(Blind);
-                            }
-                            else {
-                                commands.spawn(Text2dBundle {
-                                    text: Text::from_section("BB", TextStyle {
-                                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                                        font_size: 25.,
-                                        color: Color::WHITE,
-                                    }),
-                                    transform: Transform::from_xyz(
-                                        ai_blind_pos[player.player_id - 1].0,
-                                        ai_blind_pos[player.player_id - 1].1,
-                                        ai_blind_pos[player.player_id - 1].2),
-                                    ..default()
-                                })
-                                .insert(Blind);
+                                //spawn blind text
+                                if player.player_id == 0 {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("BB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
+                                        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                                        ..default()
+                                    })
+                                    .insert(Blind);
+                                }
+                                else {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("BB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
+                                        transform: Transform::from_xyz(
+                                            ai_blind_pos[player.player_id - 1].0,
+                                            ai_blind_pos[player.player_id - 1].1,
+                                            ai_blind_pos[player.player_id - 1].2),
+                                        ..default()
+                                    })
+                                    .insert(Blind);
+                                }
                             }
                         }
+                        state.round_started = true;
+                        println!("Pot is: {}", state.pot);
                     }
-                    println!("Pot is: {}", state.pot);
-                    state.round_started = true;
                     state.current_player = (state.big_blind + 1) % player_count.player_count;
                 }
 
@@ -576,5 +580,134 @@ fn next_player_turn(
             }
             PokerPhase::Showdown => {}
         }
+    }
+}
+
+pub fn handle_keyboard(
+    mut events: EventReader<KeyboardInput>,
+    mut text_query: Query<&mut Text, With<TextBoxTag>>,
+    mut char_events: EventReader<ReceivedCharacter>,
+    text_input_query: Query<(Entity, &TextBox)>,
+    children_query: Query<&Children>,
+) {
+
+    for (input_entity, textbox) in &text_input_query {
+        if !textbox.active {
+            continue;
+        }
+
+        for descendant in children_query.iter_descendants(input_entity) {
+            if let Ok(mut text) = text_query.get_mut(descendant) {
+                for event in char_events.iter() {
+                    if !(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].contains(&event.char)) {
+                        continue;
+                    }
+
+                    text.sections[0].value.push(event.char);
+                }
+
+                for event in events.iter() {
+                    match event.key_code {
+                        Some(KeyCode::Return) => {
+                            if event.state.is_pressed() {
+                                return;
+                            }; // repeats for some reason without this
+                            debug!("result = {}", text.sections[0].value);
+                        }
+                        Some(KeyCode::Back) => {
+                            text.sections[0].value.pop();
+                        }
+                        _ => {} // produces a compile error without this
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn activate(
+    interaction_query: Query<(Entity, &Interaction), Changed<Interaction>>,
+    mut text_query: Query<(Entity, &mut TextBox, &mut BackgroundColor)>,
+) {
+    // if a thingy is clicked, set it to active and make all the other ones inactive
+    // idk if we have a color scheme or something so it's just gonna be kinda greyed out if inactive
+    for (target_entity, interaction) in &interaction_query {
+        debug!("{:?} ----- {:?}", target_entity, interaction);
+        match *interaction {
+            Interaction::Pressed => {
+                for (entity, mut text_box, mut color) in &mut text_query {
+                    if target_entity == entity {
+                        // if this one was clicked, set it active and highlight it
+                        *color = Color::WHITE.into();
+                        text_box.active = true;
+                    } else {
+                        // darken and deactivate all the other ones
+                        *color = Color::rgb(0.7, 0.7, 0.7).into();
+                        text_box.active = false;
+                    }
+                }
+            }
+            Interaction::Hovered => {}
+            Interaction::None => {}
+        }
+    }
+}
+
+pub fn make_scrolly(
+    mut commands: Commands,
+    query: Query<(Entity, &TextBox), Added<TextBox>>,
+) {
+    /*
+    aight so basically this pretty much only runs once
+    it gets called every loop because its tied to the update event in mod.rs but Added<TextBox>
+    is only nonempty once (at the beginning, after the text boxes are spawned)
+    this is the easiest way i could think of to be able to run this query in order to loop over all
+    the text boxes
+    my b if this makes absolutely no sense and theres an easier way to do it
+    */
+
+    // why is box a reserved keyword
+    for (entity, textbox) in &query {
+
+        commands.entity(entity).insert(Interaction::None); // make it responsive to click interactions
+
+        // make the area for the text to be in and identify it with the TextBoxTag component
+        let text_area = commands
+            .spawn((
+                TextBundle {
+                    text: Text {
+                        linebreak_behavior: BreakLineOn::NoWrap,
+                        sections: vec![
+                            TextSection {
+                                value: "".to_string(),
+                                style: textbox.text_style.clone(),
+                            },
+                        ],
+                        ..default()
+                    },
+                    ..default()
+                },
+                TextBoxTag {
+                    id: textbox.id.clone(),
+                },
+            ))
+            .id();
+        
+        // define overflow behavior
+        let overflow_fixer = commands
+            .spawn(NodeBundle {
+                style: Style {
+                    justify_content: JustifyContent::FlexEnd, // shove it all to the left
+                    max_width: Val::Percent(100.), // make it go all the way to the end
+                    overflow: Overflow::clip(), // cut it off so it ain't visible
+                    ..default()
+                },
+                ..default()
+            })
+            .id();
+
+        // add the s c r o l l e r to the textbox
+        commands.entity(overflow_fixer).add_child(text_area);
+        commands.entity(entity).add_child(overflow_fixer);
     }
 }

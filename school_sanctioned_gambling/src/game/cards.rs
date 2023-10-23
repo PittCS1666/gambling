@@ -263,6 +263,57 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 ..Default::default()
             }).insert(VisPlayerCash);
         }
+
+        
+        commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceEvenly,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            ..default()
+        }).insert(NBundle)
+        .with_children(|parent| {
+                parent.spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                top: Val::Px(215.0),
+                                left: Val::Px(-565.0),
+                                width: Val::Px(150.0),
+                                height: Val::Px(40.0),
+                                border: UiRect::all(Val::Px(1.0)),
+                                padding: UiRect::all(Val::Px(5.0)),
+                                ..default()
+                            },
+                            border_color: BorderColor(Color::BLACK),
+                            background_color: Color::rgb(0.7, 0.7, 0.7).into(),
+                            ..default()
+                        },
+                        TextBox {
+                            text_style: TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 30.0,
+                                color: Color::BLACK,
+                            },
+                            id: 1,
+                            ..default()
+                        },
+                    ));
+                });
+            });
 }
 
 pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>) {

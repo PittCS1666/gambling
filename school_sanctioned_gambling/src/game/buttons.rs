@@ -104,15 +104,27 @@ pub fn raise_button_interaction(
     (Changed<Interaction>, With<RaiseButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
-    state: ResMut<PokerTurn>,
+    mut state: ResMut<PokerTurn>,
+    mut text_query: Query<&mut Text, With<TextBoxTag>>,
     mut last_action: ResMut<LastPlayerAction>,
 )   {
+
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
+
                 for (_, player) in player_entity_query.iter() {
                     if player.player_id == 0 && state.current_player == 0 {
                         last_action.action = Some(PlayerAction::Raise);
+                        for mut text in text_query.iter_mut() {
+                            if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
+                                state.current_top_bet += parsed_value;
+                                println!("Current top bet is now: ${}", state.current_top_bet);
+                            } else {
+                                println!("Failed to parse text into usize: {}", text.sections[0].value);
+                            }
+                            text.sections[0].value.clear();
+                        }
                     }
                 }
                 *color = Color::rgb(0.075, 0.118, 0.502).into();

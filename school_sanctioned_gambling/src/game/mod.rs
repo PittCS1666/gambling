@@ -31,6 +31,9 @@ impl Plugin for GamePlugin {
         .add_systems(Update, check_button_interaction.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, raise_button_interaction.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, fold_button_interaction.run_if(in_state(AppState::LocalPlay)))
-        .add_systems(Update, call_button_interaction.run_if(in_state(AppState::LocalPlay)));
+        .add_systems(Update, call_button_interaction.run_if(in_state(AppState::LocalPlay)))
+        .add_systems(Update, handle_keyboard.run_if(in_state(AppState::LocalPlay)))
+        .add_systems(Update, activate.run_if(in_state(AppState::LocalPlay)))
+        .add_systems(Update, make_scrolly.run_if(in_state(AppState::LocalPlay)));
     }
 }
