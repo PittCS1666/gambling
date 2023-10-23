@@ -119,8 +119,10 @@ pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
     mut node_query: Query<Entity, With<NBundle>>,
-) 
-{
+    mut player_entity_query: Query<(Entity, &mut Player)>,
+    mut player_card_query: Query<Entity, With<VisPlayerCards>>,
+    mut com_entity_query: Query<Entity, With<CommunityCards>>,
+) {
     let node = node_query.single_mut();
 
     commands.entity(node).despawn_recursive();
@@ -129,6 +131,17 @@ pub fn tear_down_game_screen(
     
     commands.entity(background).despawn_recursive();
 
+    //let player_entity = player_entity_query.single_mut();
+
+    //commands.entity(player_entity).despawn_recursive();
+
+    let player_card = player_card_query.single_mut();
+
+    commands.entity(player_card).despawn_recursive();
+
+    let com = com_entity_query.single_mut();
+
+    commands.entity(com).despawn_recursive();
 }
 
 fn process_player_turn(
@@ -308,10 +321,11 @@ pub fn turn_system(
     mut player_entity_query: Query<(Entity, &mut Player)>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     community_query: Query<&CommunityCards>,
-    com_entity_query: Query<Entity, With<CommunityCards>>,
+    mut com_entity_query: Query<Entity, With<CommunityCards>>,
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     last_action: ResMut<LastPlayerAction>,
+    mut app_state_next_state: ResMut<NextState<AppState>>
 ) {
 
     let current_player_moved = player_entity_query.iter()
@@ -322,6 +336,11 @@ pub fn turn_system(
                 None
             }
         }).unwrap_or(false);
+    let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
+        if players_no_cash == player_count.player_count - 1{
+        println!("Only one player with money left game over");
+        app_state_next_state.set(AppState::MainMenu);
+    }
     
     // If only one player left go straight to showdown phase
     let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
