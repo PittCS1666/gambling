@@ -67,6 +67,7 @@ pub struct PokerTurn {
     pub pot_raised: bool,
     pub left_of_dealer: bool,
     pub bet_made: bool,
+    pub all_checked: bool,
 }
 impl Resource for PokerTurn {
 }

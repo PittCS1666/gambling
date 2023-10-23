@@ -1,73 +1,9 @@
 use std::collections::HashMap;
 use super::cards::*;
 use super::components::*;
+use super::hand_evaluation::*;
 use rand::Rng;
 
-/*
-//Declaring Player Struct
-#[derive(Clone, Debug)]
-struct Player{
-    hand: Vec<Card>,
-    hand_strength: u16,
-    move_dist: HashMap<u16, Vec<u16>>,
-}
-
-impl Player{
-    //hand clone will be copy of hand bc structs cannot be self-referantial...I think
-    fn new(hand: Vec<Card>, hand_clone: &Vec<Card>, move_dist: HashMap<u16, Vec<u16>>) -> Self{
-        Player{
-            hand,
-            hand_strength: generate_hand_strength(hand_clone),
-            move_dist,
-        }
-    }
-}*/
-
-
-
-//Stealing this for now 
-//Adding card_strength field
-/*
-#[derive(Copy, Clone, Debug)]
-struct Card {
-    card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
-    suit: Suit,
-    value: u8, // ace: 1, 2: 2, ..., 10: 10, jack: 11, queen: 12, king: 13
-    card_strength: u8
-}
-
-//Added a card_strength field
-impl Card {
-    fn new(card_id: u8, suit: Suit, value: u8) -> Card {
-        Card {
-            card_id: card_id,
-            suit: suit,
-            value: value,
-            card_strength: generate_card_strength(value),
-        }
-    }
-}*/
-
-//Stolen from systems
-/*
-#[derive(Copy, Clone, PartialEq, Debug)]
-enum Suit {
-    Hearts,
-    Diamonds,
-    Spades,
-    Clubs
-}*/
-
-//Stolen from moveset
-/*
-#[derive(Copy, Clone, PartialEq, Debug)]
-enum MoveSet {
-    Fold,
-    Check,
-    Bet,
-    Call, 
-    Raise,
-}*/
 //Simply sets Ace to strongest card. All others remain the same
 pub fn generate_card_strength(val:u8) -> u8{
     if val == 1{
@@ -78,29 +14,47 @@ pub fn generate_card_strength(val:u8) -> u8{
 }
 
 //Generates hand strength from starting hand
-pub fn generate_hand_strength(vec_hand: &Vec<Card>) -> u16{
-    vec_hand[0].card_strength as u16 + vec_hand[1].card_strength as u16
+pub fn generate_hand_strength(vec_hand: &Vec<Card>, poker_turn: PokerTurn, community: CommunityCards) -> u16{
+    
+    let mut hand_and_community = vec_hand.clone();
+    for vector in community.cards{
+        hand_and_community.push(vector);
+    }
+
+    let mut this_hand = Hand::new(hand_and_community);
+    
+    //If we're in the preflop we'll use the 4-28 hand strength
+    if poker_turn.phase == PokerPhase::PreFlop{
+        vec_hand[0].card_strength as u16 + vec_hand[1].card_strength as u16
+    //Otherwise use hand_evaluation strength
+    }else{
+        let mut best_hand = find_best_hand(&hand_and_community);
+        best_hand.score as u16
+    }
 }
 
 //Checks rand number w/in ranges to determine move
 pub fn generate_move(player: &Player, poker_turn: PokerTurn) -> String{
     //Check for poker phase
     let mut _num = 101;
-    let chosen_dist = player.move_dist.get(&player.hand_strength);
+    let mut chosen_dist = player.move_dist.get(&player.hand_strength);
 
     if poker_turn.phase == PokerPhase::PreFlop{
-        if player.is_big_blind && !poker_turn.pot_raised {
+        chosen_dist = player.move_dist.get(&player.hand_strength);
+        if player.is_big_blind && !poker_turn.pot_raised{
             let _num = rand::thread_rng().gen_range(0..=100);
         }else{
             let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else if poker_turn.phase == PokerPhase::Flop || poker_turn.phase == PokerPhase::Turn || poker_turn.phase == PokerPhase::River{
-        if !poker_turn.bet_made{
+        chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
+        if !poker_turn.bet_made {
             let _num = rand::thread_rng().gen_range(0..=100);
         }else{
             let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else{
+        chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
         let _num = rand::thread_rng().gen_range(0..=100);
     }
 
@@ -120,13 +74,12 @@ pub fn generate_move(player: &Player, poker_turn: PokerTurn) -> String{
 //Then fill up hashmap with key value pair
 //Key: Hand strength, value: ranges
 //Returns hashmap
-pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
+pub fn fill_move_set(game_phase: PokerPhase)->HashMap<u16, Vec<u16>>{
     let mut move_dist = HashMap::new();
     
     //Vector order: check, fold, call, raise
    let mut vec_of_dists: Vec<Vec<u16>> = vec![
 
-        vec![35, 60, 85, 100], //Hand Strength: 2
         vec![35, 58, 85, 100], //4
         vec![34, 58, 85, 100], //5
         vec![34, 56, 84, 100], //6
@@ -152,11 +105,31 @@ pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
         vec![18, 27, 74, 100], //26
         vec![17, 23, 70, 100],
         vec![14, 19, 69, 100], //28
+        vec![33, 48, 82, 100], //30
+        vec![31, 56, 73, 100], //31
+        vec![24, 34, 64, 100], //32
+        vec![24, 30, 63, 100], //33
+        vec![23, 28, 62, 100], //34
+        vec![19, 25, 60, 100], //35
+        vec![19, 21, 60, 100], //36
+        vec![18, 19, 50, 100], //37
 
    ];
 
+   //Here we are filling out the postflop and after distributions
+   let i = 0;
+   while i < 8{
+       move_dist.insert(
+           i+30,
+           vec_of_dists.pop().unwrap(),
+       );
+
+       i+=1;
+   }
+   
+   //Here we are filling out the preflop distributions
     let mut i:u16 = 28;
-    while i > 3{
+    while i >3{
         move_dist.insert(
             i,
             vec_of_dists.pop().unwrap(),
@@ -165,9 +138,5 @@ pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
         i-=1;
     }
 
-    move_dist.insert(
-        2,
-        vec_of_dists.pop().unwrap(),
-    );
     move_dist
 }
