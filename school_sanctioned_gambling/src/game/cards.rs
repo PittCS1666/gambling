@@ -92,14 +92,27 @@ pub fn init_cards() -> Vec<Card> {
 }
 
 pub fn shuffle_cards(cards: &mut Vec<Card>) {
-    cards.shuffle(&mut thread_rng());        
+    cards.shuffle(&mut thread_rng());
 }
 
 pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
-        result.push(Player { player_id, cards: hand.clone(), cash: 500, current_bet: 0, has_folded: false, has_moved: false, is_all_in: false, has_raised: false, hand_strength: generate_hand_strength(&hand), move_dist: fill_move_set(),});
+        result.push(Player {
+            player_id,
+            cards: hand.clone(),
+            cash: 500,
+            current_bet: 0,
+            has_folded: false,
+            has_moved: false,
+            is_all_in: false,
+            has_raised: false,
+            hand_strength: generate_hand_strength(&hand),
+            move_dist: fill_move_set(),
+            big_blind: false,
+            small_blind: false,
+        });
     }
     result
 }
@@ -180,6 +193,8 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 has_raised: player.has_raised,
                 hand_strength: generate_hand_strength(&player.cards),
                 move_dist: fill_move_set(),
+                big_blind: false,
+                small_blind: false,
             });
         }
 
