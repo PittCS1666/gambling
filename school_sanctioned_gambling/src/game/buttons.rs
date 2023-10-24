@@ -105,7 +105,8 @@ pub fn raise_button_interaction(
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     mut state: ResMut<PokerTurn>,
-    mut text_query: Query<&mut Text, With<TextBoxTag>>,
+    mut text_query: Query<(Entity, &mut Text), Or<(With<TextBoxTag>, With<VisPlayerBet>)>>,
+    tag_query: Query<(Option<&TextBoxTag>, Option<&VisPlayerBet>)>,
     mut last_action: ResMut<LastPlayerAction>,
 )   {
 
@@ -116,14 +117,19 @@ pub fn raise_button_interaction(
                 for (_, player) in player_entity_query.iter() {
                     if player.player_id == 0 && state.current_player == 0 {
                         last_action.action = Some(PlayerAction::Raise);
-                        for mut text in text_query.iter_mut() {
-                            if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
-                                state.current_top_bet += parsed_value;
-                                println!("Current top bet is now: ${}", state.current_top_bet);
-                            } else {
-                                println!("Failed to parse text into usize: {}", text.sections[0].value);
+                        for (entity, mut text) in text_query.iter_mut() {
+                            let (text_box_tag, vis_player_bet) = tag_query.get(entity).unwrap();
+                            if text_box_tag.is_some() {
+                                if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
+                                    state.current_top_bet += parsed_value;
+                                    println!("Current top bet is now: ${}", state.current_top_bet);
+                                } else {
+                                    println!("Failed to parse text into usize: {}", text.sections[0].value);
+                                }
+                                text.sections[0].value.clear();                           
+                            } else if vis_player_bet.is_some() {
+                                text.sections[0].value = format!("Bet: ${}", state.current_top_bet);
                             }
-                            text.sections[0].value.clear();
                         }
                     }
                 }
