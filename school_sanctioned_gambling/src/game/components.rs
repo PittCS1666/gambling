@@ -36,7 +36,7 @@ pub struct VisPlayers;
 pub struct VisPlayerCash;
 
 #[derive(Component)]
-pub struct Blinds;
+pub struct Blind;
 
 #[derive(Component)]
 pub struct Player {
@@ -55,9 +55,6 @@ pub struct Player {
 }
 
 #[derive(Component)]
-pub struct Blind;
-
-#[derive(Component)]
 pub struct CommunityCards {
     pub cards: Vec<Card>,
 }
@@ -69,6 +66,11 @@ pub enum PokerPhase {
     Turn,
     River,
     Showdown,
+}
+
+#[derive(Resource)]
+pub struct StartingCash {
+    starting_cash: usize,
 }
 
 pub struct PokerTurn {

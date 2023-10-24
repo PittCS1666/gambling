@@ -193,7 +193,7 @@ pub fn online_button_interaction(
             Interaction::Pressed => {
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
                 border_color.0 = Color::RED;
-                app_state_next_state.set(AppState::LocalPlay);
+                app_state_next_state.set(AppState::OnlinePlay);
             }
             Interaction::Hovered => {
                 *color = Color::rgb(0.133, 0.188, 0.659).into();
