@@ -20,3 +20,11 @@ pub struct TextBox {
 pub struct TextBoxTag {
     pub id: u32,
 }
+
+#[derive(Resource)]
+pub struct OptionsResult {
+    pub money_per_player: usize,
+    pub small_blind_amount: usize,
+    pub big_blind_amount: usize,
+    pub num_players: usize,
+}

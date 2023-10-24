@@ -71,6 +71,11 @@ pub enum PokerPhase {
     Showdown,
 }
 
+#[derive(Resource)]
+pub struct StartingCash {
+    starting_cash: usize,
+}
+
 pub struct PokerTurn {
     pub current_player: usize,
     pub phase: PokerPhase,
