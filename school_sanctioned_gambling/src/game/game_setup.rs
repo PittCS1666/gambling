@@ -114,9 +114,9 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
-    node_query: Query<Entity, With<NBundle>>,
+    mut node_query: Query<Entity, With<NBundle>>,
     player_entity_query: Query<Entity,  With<Player>>,
-    player_card_query: Query<Entity, With<VisPlayerCards>>,
+    mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     com_entity_query: Query<Entity, With<CommunityCards>>,
     vis_player_query: Query<Entity, With<VisPlayers>>,
     mut blinds_query: Query<Entity, With<Blind>>,
@@ -138,6 +138,7 @@ pub fn tear_down_game_screen(
 
     for entity in blinds_query.iter_mut() {
         commands.entity(entity).despawn_recursive();
+    }
 
     if player_entity_query.iter().next().is_some() {
         for entity in player_entity_query.iter() {
@@ -431,7 +432,7 @@ pub fn turn_system(
                     let cards = &mut deck.cards;
                     shuffle_cards(cards);
                     let players_hands = deal_hands(player_count.player_count, cards, options_result.money_per_player);
-                    spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query, &sprite_data);
+                    spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
 
                     //loops through the players to find the big and small blinds
                     if player_entity_query.iter().count() > 0 && !game_over {
