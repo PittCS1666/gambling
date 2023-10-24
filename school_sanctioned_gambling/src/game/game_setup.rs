@@ -30,6 +30,30 @@ pub fn load_game(
         transform: Transform::from_xyz(0., 0., 1.),
         ..default()
     }).insert(Background);
+
+    commands.spawn(TextBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..Default::default()
+        },
+        text: Text {
+            sections: vec![
+                TextSection {
+                    value: format!("Cash: ${}", options_result.money_per_player),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                }
+            ],
+            alignment: TextAlignment::Center,
+            linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
+        },
+        ..Default::default()
+    }).insert(VisPlayerCash);
     
     spawn_option_buttons(&mut commands, &asset_server);
     spawn_players(&mut commands, &asset_server, &player_num_mut);
@@ -147,6 +171,7 @@ fn process_player_turn(
     player_entity_query: &mut Query<(Entity, &mut Player)>,
     player_count: &ResMut<NumPlayers>,
     mut last_action: ResMut<LastPlayerAction>,
+    mut cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
 ) {
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
@@ -171,7 +196,7 @@ fn process_player_turn(
                 if !player.has_folded && !player.is_all_in {
                     let mut rng = rand::thread_rng();
                     if rng.gen_bool(0.2) {
-                        call_action(state, player, player_count, &mut last_action,);
+                        call_action(state, player, player_count, &mut last_action, &mut cash_query);
                     } else {
                         check_action(state, player, player_count, &mut last_action);
                     }
@@ -186,13 +211,13 @@ fn process_player_turn(
                         check_action(state, player, player_count, &mut last_action);
                         break;
                     } else if let Some(PlayerAction::Raise) = last_action.action {
-                        player_raised = raise_action(state, player, player_count, &mut last_action,);
+                        player_raised = raise_action(state, player, player_count, &mut last_action, &mut cash_query);
                         break;
                     } else if let Some(PlayerAction::Fold) = last_action.action {
                         fold_action(state, player, player_count, &mut last_action);
                         break;
                     } else if let Some(PlayerAction::Call) = last_action.action {
-                        call_action(state, player, player_count, &mut last_action);
+                        call_action(state, player, player_count, &mut last_action, &mut cash_query);
                         break;
                     }
                 } else {
@@ -237,13 +262,20 @@ pub fn raise_action (
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
+    mut cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
 ) -> bool {
+    let mut cash_text = cash_query.single_mut();
+    println!("Top bet: {}, cur bet: {}", state.current_top_bet, player.current_bet);
+
     if player.cash >= state.current_top_bet - player.current_bet {
         state.pot += state.current_top_bet - player.current_bet;
-        println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
+        //println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
         player.has_moved = true;
         player.has_raised = true;
         player.cash -= state.current_top_bet - player.current_bet;
+        if player.player_id == 0 {
+            cash_text.sections[0].value = player.cash.to_string();
+        }
         if player.cash == 0 {
             player.is_all_in = true;
             println!("Player {} has gone all in!", player.player_id);
@@ -281,7 +313,10 @@ pub fn call_action(
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
+    mut cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
 ) {
+    let mut cash_text = cash_query.single_mut();
+
     if player.cash >= state.current_top_bet - player.current_bet {
         println!("Player {} has called!", player.player_id);
         player.has_moved = true;
@@ -290,6 +325,9 @@ pub fn call_action(
         }
         state.pot += state.current_top_bet - player.current_bet;
         player.cash -= state.current_top_bet - player.current_bet;
+        if player.player_id == 0 {
+            cash_text.sections[0].value = player.cash.to_string();
+        }
         if player.cash == 0 {
             player.is_all_in = true;
             println!("Player {} has gone all in!", player.player_id);
@@ -307,6 +345,9 @@ pub fn call_action(
         player.current_bet = player.cash + player.current_bet;
         player.cash = 0;
         state.current_player = (state.current_player + 1) % player_count.player_count;
+        if player.player_id == 0 {
+            cash_text.sections[0].value = player.cash.to_string();
+        }
     }
 }
 
@@ -325,6 +366,7 @@ pub fn turn_system(
     mut app_state_next_state: ResMut<NextState<AppState>>,
     sprite_data: Res<SpriteData>,
     options_result: Res<OptionsResult>,
+    mut cash_query: Query<&mut Text, With<VisPlayerCash>>,
 ) {
   
   let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
@@ -351,6 +393,9 @@ pub fn turn_system(
         state.phase = PokerPhase::Showdown;
     }
 
+    
+    let mut cash_text = cash_query.single_mut();
+
     match state.phase {
         PokerPhase::PreFlop => {
                 if !state.round_started {
@@ -368,12 +413,20 @@ pub fn turn_system(
                         for (_, mut player) in player_entity_query.iter_mut() {
                             if player.player_id == state.small_blind {
                                 player.small_blind = true;
+                                if player.player_id == 0 {
+                                    println!("Player's cash1: {}", player.cash);}
                                 player.cash -= state.small_blind_val;
+                                if player.player_id == 0 {
+                                    println!("Player's cash2: {}", player.cash);}
                                 player.current_bet = state.small_blind_val;
                                 state.pot += state.small_blind_val;
                                 
+                                
                                 //spawn the blind text
                                 if player.player_id == 0 {
+                                    //update player's visible cash amount
+                                    cash_text.sections[0].value = player.cash.to_string();
+
                                     commands.spawn(Text2dBundle {
                                         text: Text::from_section("SB", TextStyle {
                                             font: asset_server.load("fonts/Lato-Black.ttf"),
@@ -403,13 +456,20 @@ pub fn turn_system(
                             }
                             else if player.player_id == state.big_blind {
                                 player.big_blind = true;
-                                player.cash -= state.big_blind;
+                                if player.player_id == 0 {
+                                    println!("Player's cash1: {}", player.cash);}
+                                player.cash -= state.big_blind_val;
+                                if player.player_id == 0 {
+                                println!("Player's cash2: {}", player.cash);}
                                 player.current_bet = state.big_blind_val;
                                 state.pot += state.big_blind_val;
                                 state.current_top_bet = state.big_blind_val;
 
                                 //spawn blind text
                                 if player.player_id == 0 {
+                                    //update player's visible cash amount
+                                    cash_text.sections[0].value = player.cash.to_string();
+
                                     commands.spawn(Text2dBundle {
                                         text: Text::from_section("BB", TextStyle {
                                             font: asset_server.load("fonts/Lato-Black.ttf"),
@@ -445,7 +505,7 @@ pub fn turn_system(
                 }
 
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
+                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
@@ -457,7 +517,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
+                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
@@ -469,7 +529,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
+                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count); 
         }
@@ -481,7 +541,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
+                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count);
         }
@@ -508,6 +568,7 @@ pub fn turn_system(
                     if player.player_id == 0 {
                         println!("Player 0 wins and gains a pot of {}\n", state.pot);
                         player.cash += state.pot;
+                        cash_text.sections[0].value = player.cash.to_string();
                     }
                 } else if winner == 1 {
                     if player.player_id == 1 {
@@ -517,6 +578,7 @@ pub fn turn_system(
                 } else {
                     println!("Player {} ties and gains a pot of {}\n", player.player_id, state.pot/player_count.player_count);
                     player.cash += state.pot/player_count.player_count;
+                    cash_text.sections[0].value = player.cash.to_string();
                 }
            }
 

@@ -229,7 +229,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
         // Only ever show the cards of player 0 i.e. the human player to the screen
         if player.player_id == 0 {
             for (index, card) in player.cards.iter().enumerate() {
-                let transform_x = 640. - (2. * 129. + 100.) + (index as f32) * (129. + 40.);
+                let transform_x = 740. - (2. * 129. + 100.) + (index as f32) * (129. + 40.);
                 let transform_y = -360. + 230. / 2. + 20.;
                 commands.spawn(SpriteSheetBundle{
                     sprite: TextureAtlasSprite {
@@ -299,7 +299,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
             }
         }
 
-            commands.spawn(TextBundle {
+            /*commands.spawn(TextBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
                     align_items: AlignItems::Center,
@@ -321,7 +321,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
                 },
                 ..Default::default()
-            }).insert(VisPlayerCash);
+            }).insert(VisPlayerCash);*/
         }
 
         
