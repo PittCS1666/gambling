@@ -432,10 +432,12 @@ pub fn turn_system(
                                 player.small_blind = true;
                                 if player.cash <= state.small_blind_val {
                                     state.pot += player.cash;
+                                    player.current_bet = player.cash;
                                     player.cash = 0;
                                     player.is_all_in = true;
                                 } else {
                                     player.cash -= state.small_blind_val;
+                                    player.current_bet = state.small_blind_val;
                                     state.pot += state.small_blind_val;
                                 }
                                 
@@ -476,13 +478,14 @@ pub fn turn_system(
                                 player.big_blind = true;
                                 if player.cash <= state.big_blind_val {
                                     state.pot += player.cash;
+                                    player.current_bet = player.cash;
                                     player.cash = 0;
                                     player.is_all_in = true;
                                 } else {
                                     player.cash -= state.small_blind_val;
+                                    player.current_bet = state.small_blind_val;
                                     state.pot += state.small_blind_val;
                                 }
-
                                 //spawn blind text
                                 if player.player_id == 0 {
                                     //update player's visible cash amount
