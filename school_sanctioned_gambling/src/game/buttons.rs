@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use super::components::*;
 
 pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-    let button_texts = vec!["Check", "Call", "Raise $50", "Fold"];
+    let button_texts = vec!["Check", "Call", "Raise", "Fold"];
     let button_width = 150.0;
     let button_spacing = 10.0;
     
@@ -39,7 +39,7 @@ pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetSer
             match text {
                 "Check" => individual_button_entity.insert(CheckButton),
                 "Call" => individual_button_entity.insert(CallButton),
-                "Raise $50" => individual_button_entity.insert(RaiseButton),
+                "Raise" => individual_button_entity.insert(RaiseButton),
                 "Fold" => individual_button_entity.insert(FoldButton),
                 _ => panic!("Unknown button text: {}", text),
             };
@@ -56,6 +56,56 @@ pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetSer
             });
         }
     });
+
+    commands
+    .spawn(NodeBundle {
+        style: Style {
+            width: Val::Percent(100.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::SpaceEvenly,
+            flex_direction: FlexDirection::Column,
+            ..default()
+        },
+        ..default()
+    }).insert(NBundle)
+    .with_children(|parent| {
+            parent.spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            })
+            .with_children(|parent| {
+                parent.spawn((
+                    NodeBundle {
+                        style: Style {
+                            top: Val::Px(215.0),
+                            left: Val::Px(-565.0),
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            border: UiRect::all(Val::Px(1.0)),
+                            padding: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        border_color: BorderColor(Color::BLACK),
+                        background_color: Color::rgb(0.7, 0.7, 0.7).into(),
+                        ..default()
+                    },
+                    TextBox {
+                        text_style: TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 30.0,
+                            color: Color::BLACK,
+                        },
+                        id: 1,
+                        ..default()
+                    },
+                ));
+            });
+        });
 }
 
 pub fn check_button_interaction(
@@ -115,13 +165,17 @@ pub fn raise_button_interaction(
 
                 for (_, player) in player_entity_query.iter() {
                     if player.player_id == 0 && state.current_player == 0 {
-                        last_action.action = Some(PlayerAction::Raise);
                         for mut text in text_query.iter_mut() {
                             if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
-                                state.current_top_bet += parsed_value;
-                                println!("Current top bet is now: ${}", state.current_top_bet);
+                                if parsed_value > 0 {
+                                    state.current_top_bet += parsed_value;
+                                    println!("Current top bet is now: ${}", state.current_top_bet);
+                                    last_action.action = Some(PlayerAction::Raise);
+                                } else {
+                                    println!("Have to raise by more than 0!");
+                                }
                             } else {
-                                println!("Failed to parse text into usize: {}", text.sections[0].value);
+                                println!("Not a valid raise");
                             }
                             text.sections[0].value.clear();
                         }
