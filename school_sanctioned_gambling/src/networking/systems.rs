@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 //use bevy::input::keyboard::KeyboardInput;
 
-#[path = "./server.rs"]
-mod server;
 #[path = "./client.rs"]
 mod client;
 
@@ -26,7 +24,7 @@ pub fn on_entry(mut commands: Commands, asset_server: Res<AssetServer>)
         }).insert(NBundle)
         .with_children(|parent| {
 
-            // Create Server Button
+            /* Create Server Button
             parent.spawn(ButtonBundle {
                 style: Style {
                     width: Val::Px(270.0),
@@ -53,7 +51,7 @@ pub fn on_entry(mut commands: Commands, asset_server: Res<AssetServer>)
                         color: Color::rgb(0.9, 0.9, 0.9),
                     },
                 ));
-            });
+            }); */
 
             // Join Server Button
             parent.spawn(ButtonBundle {
@@ -168,7 +166,7 @@ pub fn fill_textboxes(
         commands.entity(entity).add_child(child);
     }
 }
-
+/*
 pub fn server_on_enter()
 {
     server::server_init(/*g_server*/);
@@ -178,7 +176,7 @@ pub fn server_on_update()
 {
     server::server_tick(/*g_server*/);
 }
-
+*/
 pub fn client_on_enter()
 {
     client::client_init(/*g_client*/);
