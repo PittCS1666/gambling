@@ -95,7 +95,7 @@ pub fn shuffle_cards(cards: &mut Vec<Card>) {
     cards.shuffle(&mut thread_rng());
 }
 
-pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, poker_turn: PokerTurn, community_cards: CommunityCards) -> Vec<Player> {
+pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
@@ -108,8 +108,8 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, poker_turn: PokerT
             has_moved: false,
             is_all_in: false,
             has_raised: false,
-            hand_strength: generate_hand_strength(&hand, poker_turn, community_cards),
-            move_dist: fill_move_set(poker_turn.phase),
+            hand_strength: generate_pre_flop_hand_strength(&hand),
+            move_dist: fill_move_set(),
             big_blind: false,
             small_blind: false,
         });
@@ -168,7 +168,7 @@ pub fn card_function(
     }
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, poker_turn: PokerTurn, community_cards: CommunityCards) {
+pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
@@ -191,8 +191,8 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 has_moved: player.has_moved,
                 is_all_in: player.is_all_in,
                 has_raised: player.has_raised,
-                hand_strength: generate_hand_strength(&player.cards, poker_turn, community_cards ),
-                move_dist: fill_move_set(poker_turn.phase),
+                hand_strength: generate_pre_flop_hand_strength(&player.cards),
+                move_dist: fill_move_set(),
                 big_blind: false,
                 small_blind: false,
             });

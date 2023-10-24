@@ -21,7 +21,7 @@ impl Plugin for GamePlugin {
         app
         .insert_resource(init_cards_resource())
         //This line can be used to set whose turn it is
-        .insert_resource(PokerTurn { current_player: 1, phase: PokerPhase::PreFlop, round_started: false, pot: 0, current_top_bet:0, bet_made: false, left_of_dealer: false, small_blind: 0, big_blind: 1, small_blind_val: 25, big_blind_val: 50})
+        .insert_resource(PokerTurn { current_player: 1, phase: PokerPhase::PreFlop, round_started: false, pot: 0, current_top_bet:0, bet_made: false, pot_raised: false, small_blind: 1, big_blind: 0, small_blind_val: 25, big_blind_val: 50})
         //Update this line to increase number of players for now
         .insert_resource(NumPlayers { player_count: 2 })
         .insert_resource(LastPlayerAction{ action: Some(PlayerAction::None) })
