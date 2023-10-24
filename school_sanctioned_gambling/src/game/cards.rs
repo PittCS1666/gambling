@@ -92,14 +92,27 @@ pub fn init_cards() -> Vec<Card> {
 }
 
 pub fn shuffle_cards(cards: &mut Vec<Card>) {
-    cards.shuffle(&mut thread_rng());        
+    cards.shuffle(&mut thread_rng());
 }
 
 pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, poker_turn: PokerTurn, community_cards: CommunityCards) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
-        result.push(Player { player_id, cards: hand.clone(), cash: 500, current_bet: 0, has_folded: false, has_moved: false, is_all_in: false, has_raised: false, hand_strength: generate_hand_strength(&hand, poker_turn, community_cards), move_dist: fill_move_set(poker_turn.phase), is_big_blind: false});
+        result.push(Player {
+            player_id,
+            cards: hand.clone(),
+            cash: 500,
+            current_bet: 0,
+            has_folded: false,
+            has_moved: false,
+            is_all_in: false,
+            has_raised: false,
+            hand_strength: generate_hand_strength(&hand, poker_turn, community_cards),
+            move_dist: fill_move_set(poker_turn.phase),
+            big_blind: false,
+            small_blind: false,
+        });
     }
     result
 }
@@ -123,7 +136,7 @@ pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&Communi
 pub fn card_function(
     community_query: &Query<&CommunityCards>,
     players: &Vec<&Player>,
-) {
+) -> usize {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query.iter().flat_map(|cards| &cards.cards).cloned().collect();
     let mut hand1: Hand = Hand::_new_blank();
@@ -131,9 +144,6 @@ pub fn card_function(
     // Iterate through each player
     for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
-
-        
-
         // Ensure there are at least 5 cards between the player and community cards before evaluation
         if player_cards.len() + community_cards.len() >= 5 {
             let hand = test_evaluator(player_cards_component.player_id, player_cards.to_vec(), community_cards.to_vec());
@@ -148,13 +158,13 @@ pub fn card_function(
     
     let comparison = compare_hands(&mut hand1, &mut hand2);
     if comparison == 1 {
-        println!("Player 0 wins with a score of {}\n", hand1.score);
+        return 0;
     }
     else if comparison == 2 {
-        println!("Player 1 wins with a score of {}\n", hand2.score);
+        return 1;
     }
     else {
-        println!("It's a draw!\n");
+        return 2;
     }
 }
 
@@ -183,7 +193,8 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 has_raised: player.has_raised,
                 hand_strength: generate_hand_strength(&player.cards, poker_turn, community_cards ),
                 move_dist: fill_move_set(poker_turn.phase),
-                is_big_blind: false, 
+                big_blind: false,
+                small_blind: false,
             });
         }
 
@@ -250,8 +261,59 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
                 },
                 ..Default::default()
-            });
+            }).insert(VisPlayerCash);
         }
+
+        
+        commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceEvenly,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            ..default()
+        }).insert(NBundle)
+        .with_children(|parent| {
+                parent.spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                top: Val::Px(215.0),
+                                left: Val::Px(-565.0),
+                                width: Val::Px(150.0),
+                                height: Val::Px(40.0),
+                                border: UiRect::all(Val::Px(1.0)),
+                                padding: UiRect::all(Val::Px(5.0)),
+                                ..default()
+                            },
+                            border_color: BorderColor(Color::BLACK),
+                            background_color: Color::rgb(0.7, 0.7, 0.7).into(),
+                            ..default()
+                        },
+                        TextBox {
+                            text_style: TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 30.0,
+                                color: Color::BLACK,
+                            },
+                            id: 1,
+                            ..default()
+                        },
+                    ));
+                });
+            });
 }
 
 pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>) {

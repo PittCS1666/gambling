@@ -30,6 +30,15 @@ pub struct NCards;
 pub struct VisPlayerCards;
 
 #[derive(Component)]
+pub struct VisPlayers;
+
+#[derive(Component)]
+pub struct VisPlayerCash;
+
+#[derive(Component)]
+pub struct Blinds;
+
+#[derive(Component)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -41,8 +50,12 @@ pub struct Player {
     pub has_raised: bool,
     pub hand_strength: u16,
     pub move_dist: HashMap<u16, Vec<u16>>,
-    pub is_big_blind: bool,
+    pub big_blind: bool,
+    pub small_blind: bool,
 }
+
+#[derive(Component)]
+pub struct Blind;
 
 #[derive(Component)]
 pub struct CommunityCards {
@@ -65,9 +78,11 @@ pub struct PokerTurn {
     pub pot: usize,
     pub current_top_bet: usize,
     pub pot_raised: bool,
-    pub left_of_dealer: bool,
     pub bet_made: bool,
-    pub all_checked: bool,
+    pub small_blind: usize,
+    pub big_blind: usize,
+    pub small_blind_val: usize,
+    pub big_blind_val: usize,
 }
 impl Resource for PokerTurn {
 }
@@ -92,4 +107,16 @@ pub enum PlayerAction {
     Fold,
     Call,
     None,
+}
+
+#[derive(Component, Default, Debug)]
+pub struct TextBox {
+    pub active: bool,
+    pub id: u32,
+    pub text_style: TextStyle,
+}
+
+#[derive(Component)]
+pub struct TextBoxTag {
+    pub id: u32,
 }

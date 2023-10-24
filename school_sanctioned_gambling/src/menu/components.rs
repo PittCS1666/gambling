@@ -14,3 +14,6 @@ pub struct OnlineButton;
 
 #[derive(Component)]
 pub struct NBundle;
+
+#[derive(Component)]
+pub struct Camera;
