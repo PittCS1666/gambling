@@ -216,19 +216,10 @@ fn process_player_turn(
                     else {
                         check_action(state, player, player_count, &mut last_action);
                     }
-                }
-                /*if !player.has_folded && !player.is_all_in {
-                    let mut rng = rand::thread_rng();
-                    if rng.gen_bool(0.2) {
-                        call_action(state, player, player_count, &mut last_action, &mut cash_query);
-                    } else {
-                        check_action(state, player, player_count, &mut last_action);
-                    }
-                    break;
                 } else {
                     state.current_player = (current_player + 1) % player_count.player_count;
                     player.has_moved = true;
-                }*/
+                }
             } else {
                 if !player.has_folded && !player.is_all_in {
                     if let Some(PlayerAction::Check) = last_action.action {
@@ -439,9 +430,16 @@ pub fn turn_system(
                         for (_, mut player) in player_entity_query.iter_mut() {
                             if player.player_id == state.small_blind {
                                 player.small_blind = true;
-                                player.cash -= state.small_blind_val;
-                                player.current_bet = state.small_blind_val;
-                                state.pot += state.small_blind_val;
+                                if player.cash <= state.small_blind_val {
+                                    state.pot += player.cash;
+                                    player.current_bet = player.cash;
+                                    player.cash = 0;
+                                    player.is_all_in = true;
+                                } else {
+                                    player.cash -= state.small_blind_val;
+                                    player.current_bet = state.small_blind_val;
+                                    state.pot += state.small_blind_val;
+                                }
                                 
                                 
                                 //spawn the blind text
@@ -478,11 +476,16 @@ pub fn turn_system(
                             }
                             else if player.player_id == state.big_blind {
                                 player.big_blind = true;
-                                player.cash -= state.big_blind_val;
-                                player.current_bet = state.big_blind_val;
-                                state.pot += state.big_blind_val;
-                                state.current_top_bet = state.big_blind_val;
-
+                                if player.cash <= state.big_blind_val {
+                                    state.pot += player.cash;
+                                    player.current_bet = player.cash;
+                                    player.cash = 0;
+                                    player.is_all_in = true;
+                                } else {
+                                    player.cash -= state.small_blind_val;
+                                    player.current_bet = state.small_blind_val;
+                                    state.pot += state.small_blind_val;
+                                }
                                 //spawn blind text
                                 if player.player_id == 0 {
                                     //update player's visible cash amount
@@ -566,7 +569,15 @@ pub fn turn_system(
         PokerPhase::Showdown => {
             // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
             // and remove the entities so that player_entity_query can be used in this instance
-            let winner = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
+            let mut winner = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
+
+            if active_players_count == 1 {
+                for (_, player) in player_entity_query.iter_mut() {
+                    if !player.has_folded {
+                        winner = player.player_id;
+                    }
+                }
+            }
 
             // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
