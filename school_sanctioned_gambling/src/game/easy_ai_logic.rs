@@ -45,6 +45,7 @@ pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mu
     //Check for poker phase
     let mut _num = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
+    println!("Start: Player: {}, {:?}", player.player_id, chosen_dist);
 
     if poker_turn.phase == PokerPhase::PreFlop{
         chosen_dist = player.move_dist.get(&player.hand_strength);
@@ -69,6 +70,7 @@ pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mu
 
     println!("num: {}", _num);
 
+    println!("Before if: Player: {}, {:?}", player.player_id, chosen_dist);
     if _num <= chosen_dist.unwrap()[0]{
         "Check".to_string()
     }else if _num <= chosen_dist.unwrap()[1]{
