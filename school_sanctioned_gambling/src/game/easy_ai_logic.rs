@@ -45,7 +45,6 @@ pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mu
     //Check for poker phase
     let mut _num = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
-    println!("Start: Player: {}, {:?}", player.player_id, chosen_dist);
 
     if poker_turn.phase == PokerPhase::PreFlop{
         chosen_dist = player.move_dist.get(&player.hand_strength);
@@ -68,9 +67,6 @@ pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mu
         _num = rand::thread_rng().gen_range(0..=100);
     }
 
-    println!("num: {}", _num);
-
-    println!("Before if: Player: {}, {:?}", player.player_id, chosen_dist);
     if _num <= chosen_dist.unwrap()[0]{
         "Check".to_string()
     }else if _num <= chosen_dist.unwrap()[1]{
@@ -130,14 +126,14 @@ pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
    ];
 
    //Here we are filling out the postflop and after distributions
-   let mut i = 0;
-   while i < 8{
+   let mut i = 8;
+   while i > 0{
        move_dist.insert(
-           i + 30,
+           (i-1) + 30,
            vec_of_dists.pop().unwrap(),
        );
 
-       i += 1;
+       i -= 1;
    }
    
    //Here we are filling out the preflop distributions
