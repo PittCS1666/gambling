@@ -145,7 +145,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
     result
 }
 
-pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&CommunityCards>,) -> Vec<Vec<Card>> {
+pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&CommunityCards>) -> Vec<Vec<Card>> {
     let mut result: Vec<Vec<Card>> = Vec::with_capacity(5);
     // Dealing of Flop, Turn, and River
     if community_query.iter().count() == 0 {
@@ -243,44 +243,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     ..default()
                 }).insert(VisPlayerCards);
             }
-            // let top_shift = 690. - (90. * ((player.player_id as f32) + 1.));
-            // commands
-            //     .spawn(ButtonBundle {
-            //         style: Style {
-            //             position_type: PositionType::Absolute,
-            //             top: Val::Px(top_shift),
-            //             left: Val::Px(820.),
-            //             width: Val::Px(460.0),
-            //             height: Val::Px(90.0),
-            //             border: UiRect::all(Val::Px(3.0)),
-            //             align_self: AlignSelf::Center,
-            //             justify_self: JustifySelf::Center,
-            //             justify_content: JustifyContent::Center,
-            //             align_items: AlignItems::Center,
-            //             ..Default::default()
-            //         },
-            //         border_color: BorderColor(Color::BLACK),
-            //         background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-            //         ..Default::default()
-            //     }).insert(VisPlayerCards)
-            //     .with_children(|parent| {
-            //         for (index, card) in player.cards.iter().enumerate() {
-            //             let left_shift = 10. + 230. * (index as f32);
-            //             parent.spawn(TextBundle::from_section(
-            //                 card.to_string(),
-            //                 TextStyle {
-            //                     font: asset_server.load("fonts/Lato-Black.ttf"),
-            //                     font_size: 30.0,
-            //                     color: Color::rgb(0.9, 0.9, 0.9),
-            //                 },
-            //             ))
-            //             .insert(Style {
-            //                 position_type: PositionType::Absolute,
-            //                 left: Val::Px(left_shift),
-            //                 ..Default::default()
-            //             });
-            //         }
-            //     });
+
         } else if player.player_id == 1 { // this is just for midterm progress (AIs cards are shown)
             for (index, card) in player.cards.iter().enumerate() {
                 let transform_x = 250.0 + (index as f32) * (58. + 20.);
@@ -298,31 +261,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 }).insert(VisPlayerCards);
             }
         }
-
-            /*commands.spawn(TextBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..Default::default()
-                },
-                text: Text {
-                    sections: vec![
-                        TextSection {
-                            value: format!("Cash: ${}", player.cash),
-                            style: TextStyle {
-                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                font_size: 40.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
-                            },
-                        }
-                    ],
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
-                },
-                ..Default::default()
-            }).insert(VisPlayerCash);*/
-        }
+    }
 
         
         commands

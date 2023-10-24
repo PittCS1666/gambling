@@ -14,7 +14,7 @@ pub fn generate_card_strength(val:u8) -> u8{
     }
 }
 
-pub fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, community_cards: &mut CommunityCards) -> u16 {
+fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, mut community_query: &mut Query<&CommunityCards>) -> u16 {
     /*let mut hand_and_community = vec_hand.clone();
     for vector in &community.cards{
         hand_and_community.push(*vector);
@@ -22,7 +22,14 @@ pub fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, community_card
 
     let mut hand_and_community: Vec<Card> = Vec::new();
     hand_and_community.append(&mut hand);
-    hand_and_community.append(&mut community_cards.cards);
+
+    for mut community_cards in community_query.iter() {
+        hand_and_community.append(&mut community_cards.cards.to_vec())
+    }
+
+    
+    
+    //hand_and_community.append(&mut community_cards.cards);
 
     let best_hand = find_best_hand(&hand_and_community);
     best_hand.score as u16
@@ -34,7 +41,7 @@ pub fn generate_pre_flop_hand_strength(hand: &Vec<Card>) -> u16 {
 }
 
 //Checks rand number w/in ranges to determine move
-pub fn generate_move(player: &Player, poker_turn: &ResMut<PokerTurn>) -> String{
+pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mut community_query: &mut Query<&CommunityCards>) -> String{
     //Check for poker phase
     let mut _num = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
@@ -42,21 +49,25 @@ pub fn generate_move(player: &Player, poker_turn: &ResMut<PokerTurn>) -> String{
     if poker_turn.phase == PokerPhase::PreFlop{
         chosen_dist = player.move_dist.get(&player.hand_strength);
         if player.big_blind && !poker_turn.pot_raised{
-            let _num = rand::thread_rng().gen_range(0..=100);
+            _num = rand::thread_rng().gen_range(0..=100);
         }else{
-            let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+            _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else if poker_turn.phase == PokerPhase::Flop || poker_turn.phase == PokerPhase::Turn || poker_turn.phase == PokerPhase::River{
+        player.hand_strength = generate_post_flop_hand_strength(&mut player.cards, &mut community_query);
+
         chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
         if !poker_turn.bet_made {
-            let _num = rand::thread_rng().gen_range(0..=100);
+            _num = rand::thread_rng().gen_range(0..=100);
         }else{
-            let _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
+            _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
     }else{
         chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
-        let _num = rand::thread_rng().gen_range(0..=100);
+        _num = rand::thread_rng().gen_range(0..=100);
     }
+
+    println!("num: {}", _num);
 
     if _num <= chosen_dist.unwrap()[0]{
         "Check".to_string()
