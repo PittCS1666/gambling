@@ -30,6 +30,9 @@ pub struct NCards;
 pub struct VisPlayerCards;
 
 #[derive(Component)]
+pub struct VisPlayerBet;
+
+#[derive(Component)]
 pub struct VisPlayers;
 
 #[derive(Component)]
