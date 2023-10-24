@@ -3,6 +3,7 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use rand::Rng;
+use super::easy_ai_logic::*;
 use bevy::text::BreakLineOn;
 use crate::AppState;
 use bevy::input::keyboard::KeyboardInput;
@@ -84,7 +85,7 @@ pub fn tear_down_game_screen(
     mut node_query: Query<Entity, With<NBundle>>,
     player_entity_query: Query<Entity,  With<Player>>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
-    com_entity_query: Query<Entity, With<CommunityCards>>,
+    mut com_entity_query: Query<Entity, With<CommunityCards>>,
     vis_player_query: Query<Entity, With<VisPlayers>>,
     blinds_query: Query<Entity, With<Blinds>>,
     vis_cash_query: Query<Entity, With<VisPlayerCash>>,
@@ -312,8 +313,9 @@ pub fn turn_system(
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     last_action: ResMut<LastPlayerAction>,
+
     mut blind_text_query: Query<Entity, With<Blind>>,
-    mut app_state_next_state: ResMut<NextState<AppState>>
+    mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
   
   let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
@@ -326,8 +328,10 @@ pub fn turn_system(
                 None
             }
         }).unwrap_or(false);
+
+    
     let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
-    if players_no_cash == 1 {
+    if players_no_cash ==  player_count.player_count -1{
         println!("Only one player with money left game over");
         app_state_next_state.set(AppState::MainMenu);
     }

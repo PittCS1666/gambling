@@ -17,7 +17,7 @@ impl Hand {
             score: 0,
         }
     }
-    fn new(cards: Vec<Card>) -> Hand{
+    pub fn new(cards: Vec<Card>) -> Hand{
         let mut suits: HashSet<Suit> = HashSet::new();
         let mut ranks: Vec<u8> = vec![0; 13];
         let score: u8 = 0;
@@ -59,7 +59,7 @@ pub fn test_evaluator(player_id: usize, player_cards: Vec<Card>, community_cards
     return hand;
 }
 
-fn find_best_hand(cards: &Vec<Card>) -> Hand{
+pub fn find_best_hand(cards: &Vec<Card>) -> Hand{
     //there might be a library to get all combinations easily
     if cards.len() == 5 {
         let mut hand: Hand = Hand::new(cards.to_vec());
@@ -115,7 +115,7 @@ fn get_all_hands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
     return combinations
 }
 
-fn evaluate_hand(hand: &mut Hand) {
+pub fn evaluate_hand(hand: &mut Hand) {
     let is_flush = if hand.suits == 1 {
         true
     }

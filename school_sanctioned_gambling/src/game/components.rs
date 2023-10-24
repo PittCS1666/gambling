@@ -77,6 +77,8 @@ pub struct PokerTurn {
     pub round_started: bool,
     pub pot: usize,
     pub current_top_bet: usize,
+    pub pot_raised: bool,
+    pub bet_made: bool,
     pub small_blind: usize,
     pub big_blind: usize,
     pub small_blind_val: usize,
