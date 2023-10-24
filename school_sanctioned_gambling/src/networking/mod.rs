@@ -12,7 +12,6 @@ impl Plugin for NetworkingPlugin {
         app
         .add_systems(OnEnter(AppState::OnlinePlay), on_entry)
         .add_systems(Update, fill_textboxes.run_if(in_state(AppState::OnlinePlay)))
-        .add_systems(Update, create_server_button_interaction.run_if(in_state(AppState::OnlinePlay)))
         .add_systems(Update, join_server_button_interaction.run_if(in_state(AppState::OnlinePlay)))
         .add_systems(Update, ip_textbox_button_interaction.run_if(in_state(AppState::OnlinePlay)))
         .add_systems(OnExit(AppState::OnlinePlay), remove_gui)
