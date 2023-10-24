@@ -262,6 +262,31 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 },
                 ..Default::default()
             }).insert(VisPlayerCash);
+        
+            commands
+                .spawn(TextBundle {
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        top: Val::Px(31.),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..Default::default()
+                    },
+                    text: Text {
+                        sections: vec![TextSection {
+                            value: format!("Bet: ${}", player.current_bet),
+                            style: TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 40.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                            },
+                        }],
+                        alignment: TextAlignment::Center,
+                        linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
+                    },
+                    ..Default::default()
+                })
+                .insert(VisPlayerCash);
         }
 
         
