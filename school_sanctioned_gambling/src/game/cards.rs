@@ -196,7 +196,7 @@ pub fn card_function(
     }
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, sprite_data: &Res<SpriteData>) {
+pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, sprite_data: &Res<SpriteData>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
@@ -263,6 +263,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
         }
     }
 
+
         
         commands
         .spawn(NodeBundle {
@@ -313,9 +314,10 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     ));
                 });
             });
+
 }
 
-pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>, sprite_data: &Res<SpriteData>) {
+pub fn spawn_community_cards(commands: &mut Commands, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>, sprite_data: &Res<SpriteData>) {
     for cards in com_cards {
         for (index,card) in cards.iter().enumerate() {
             let left_shift = -3. * 81. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
@@ -330,34 +332,6 @@ pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetSe
                 transform: Transform::from_xyz(left_shift,0.,2.),
                 ..default()
             }).insert(CommunityCards {cards: vec![card.clone()],});
-            // commands.spawn(ButtonBundle {
-            //     style: Style {
-            //         position_type: PositionType::Absolute,
-            //         top: Val::Px(317.),
-            //         left: Val::Px(left_shift),
-            //         width: Val::Px(58.0),
-            //         height: Val::Px(93.0),
-            //         border: UiRect::all(Val::Px(3.0)),
-            //         align_self: AlignSelf::Center,
-            //         justify_self: JustifySelf::Center,
-            //         justify_content: JustifyContent::Center,
-            //         align_items: AlignItems::Center,
-            //         ..default()
-            //     },
-            //     border_color: BorderColor(Color::BLACK),
-            //     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-            //     ..default()
-            // }).insert(CommunityCards {cards: vec![card.clone()],})
-            // .with_children(|parent| {
-            //     parent.spawn(TextBundle::from_section(
-            //         card.to_string(),
-            //         TextStyle {
-            //             font: asset_server.load("fonts/Lato-Black.ttf"),
-            //             font_size: 13.0,
-            //             color: Color::rgb(0.9, 0.9, 0.9),
-            //         },
-            //     ));
-            // });
         }
     }
 }

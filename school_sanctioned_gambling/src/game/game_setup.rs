@@ -114,26 +114,36 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
-    mut node_query: Query<Entity, With<NBundle>>,
+    node_query: Query<Entity, With<NBundle>>,
     player_entity_query: Query<Entity,  With<Player>>,
-    mut player_card_query: Query<Entity, With<VisPlayerCards>>,
-    mut com_entity_query: Query<Entity, With<CommunityCards>>,
+    player_card_query: Query<Entity, With<VisPlayerCards>>,
+    com_entity_query: Query<Entity, With<CommunityCards>>,
     vis_player_query: Query<Entity, With<VisPlayers>>,
     mut blinds_query: Query<Entity, With<Blind>>,
     vis_cash_query: Query<Entity, With<VisPlayerCash>>,
+    mut state: ResMut<PokerTurn>,
 ) {
+
     //let node = node_query.single_mut();
     for node in node_query.iter_mut() {
         commands.entity(node).despawn_recursive();
     }
 
     //commands.entity(node).despawn_recursive();
+
     let background = background_query.single_mut();
     
     commands.entity(background).despawn_recursive();
 
+
     for entity in blinds_query.iter_mut() {
         commands.entity(entity).despawn_recursive();
+
+    if player_entity_query.iter().next().is_some() {
+        for entity in player_entity_query.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
     }
 
     if vis_cash_query.iter().next().is_some() {
@@ -141,6 +151,7 @@ pub fn tear_down_game_screen(
             commands.entity(entity).despawn_recursive();
         }
     }
+
 
     if !player_card_query.is_empty() {
         //let player_card = player_card_query.single_mut(); 
@@ -160,6 +171,18 @@ pub fn tear_down_game_screen(
             commands.entity(entity).despawn_recursive();
         }
     }
+
+    state.current_player = 1;
+    state.phase = PokerPhase::PreFlop;
+    state.round_started = false;
+    state.pot = 0;
+    state.current_top_bet = 0;
+    state.bet_made = false;
+    state.pot_raised = false;
+    state.small_blind = 1;
+    state.big_blind = 0;
+    state.small_blind_val = 25;
+    state.big_blind_val = 50;
 }
 
 fn process_player_turn(
@@ -262,7 +285,7 @@ pub fn raise_action (
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
-    mut cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
+    cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
 ) -> bool {
     let mut cash_text = cash_query.single_mut();
 
@@ -282,6 +305,7 @@ pub fn raise_action (
         player.current_bet = state.current_top_bet;
         last_action.action = Some(PlayerAction::None);
         state.current_player = (state.current_player + 1) % player_count.player_count;
+        println!("Top bet: {}, cur bet: {}", state.current_top_bet, player.current_bet);
         return true;
     } else {
         println!("Player {} cannot raise due to going negative", player.player_id);
@@ -312,7 +336,7 @@ pub fn call_action(
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
     last_action: &mut ResMut<'_, LastPlayerAction>,
-    mut cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
+    cash_query: &mut Query<&mut Text, With<VisPlayerCash>>,
 ) {
     let mut cash_text = cash_query.single_mut();
 
@@ -381,7 +405,7 @@ pub fn turn_system(
 
     
     let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
-    
+   
     
     // If only one player left go straight to showdown phase
     let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
@@ -395,6 +419,7 @@ pub fn turn_system(
     match state.phase {
         PokerPhase::PreFlop => {
                 if !state.round_started {
+
                     let mut game_over: bool = false;
                     if players_no_cash ==  player_count.player_count -1 {
                         println!("Only one player with money left game over");
@@ -407,7 +432,6 @@ pub fn turn_system(
                     shuffle_cards(cards);
                     let players_hands = deal_hands(player_count.player_count, cards, options_result.money_per_player);
                     spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query, &sprite_data);
-
 
                     //loops through the players to find the big and small blinds
                     if player_entity_query.iter().count() > 0 && !game_over {
@@ -507,7 +531,7 @@ pub fn turn_system(
                 println!("Phase is now in flop!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
+                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query, &mut community_query);
@@ -519,7 +543,7 @@ pub fn turn_system(
                 println!("Phase is now in Turn!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
+                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query, &mut community_query);
@@ -531,7 +555,7 @@ pub fn turn_system(
                 println!("Phase is now in River!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
+                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut cash_query, &mut community_query);
