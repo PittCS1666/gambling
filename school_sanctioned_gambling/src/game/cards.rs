@@ -196,7 +196,7 @@ pub fn card_function(
     }
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, sprite_data: &Res<SpriteData>) {
+pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, sprite_data: &Res<SpriteData>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
@@ -243,44 +243,6 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     ..default()
                 }).insert(VisPlayerCards);
             }
-            // let top_shift = 690. - (90. * ((player.player_id as f32) + 1.));
-            // commands
-            //     .spawn(ButtonBundle {
-            //         style: Style {
-            //             position_type: PositionType::Absolute,
-            //             top: Val::Px(top_shift),
-            //             left: Val::Px(820.),
-            //             width: Val::Px(460.0),
-            //             height: Val::Px(90.0),
-            //             border: UiRect::all(Val::Px(3.0)),
-            //             align_self: AlignSelf::Center,
-            //             justify_self: JustifySelf::Center,
-            //             justify_content: JustifyContent::Center,
-            //             align_items: AlignItems::Center,
-            //             ..Default::default()
-            //         },
-            //         border_color: BorderColor(Color::BLACK),
-            //         background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-            //         ..Default::default()
-            //     }).insert(VisPlayerCards)
-            //     .with_children(|parent| {
-            //         for (index, card) in player.cards.iter().enumerate() {
-            //             let left_shift = 10. + 230. * (index as f32);
-            //             parent.spawn(TextBundle::from_section(
-            //                 card.to_string(),
-            //                 TextStyle {
-            //                     font: asset_server.load("fonts/Lato-Black.ttf"),
-            //                     font_size: 30.0,
-            //                     color: Color::rgb(0.9, 0.9, 0.9),
-            //                 },
-            //             ))
-            //             .insert(Style {
-            //                 position_type: PositionType::Absolute,
-            //                 left: Val::Px(left_shift),
-            //                 ..Default::default()
-            //             });
-            //         }
-            //     });
         } else if player.player_id == 1 { // this is just for midterm progress (AIs cards are shown)
             for (index, card) in player.cards.iter().enumerate() {
                 let transform_x = 250.0 + (index as f32) * (58. + 20.);
@@ -298,85 +260,10 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                 }).insert(VisPlayerCards);
             }
         }
-
-            /*commands.spawn(TextBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..Default::default()
-                },
-                text: Text {
-                    sections: vec![
-                        TextSection {
-                            value: format!("Cash: ${}", player.cash),
-                            style: TextStyle {
-                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                font_size: 40.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
-                            },
-                        }
-                    ],
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
-                },
-                ..Default::default()
-            }).insert(VisPlayerCash);*/
-        }
-
-        
-        commands
-        .spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::SpaceEvenly,
-                flex_direction: FlexDirection::Column,
-                ..default()
-            },
-            ..default()
-        }).insert(NBundle)
-        .with_children(|parent| {
-                parent.spawn(NodeBundle {
-                    style: Style {
-                        width: Val::Percent(100.0),
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent.spawn((
-                        NodeBundle {
-                            style: Style {
-                                top: Val::Px(215.0),
-                                left: Val::Px(-565.0),
-                                width: Val::Px(150.0),
-                                height: Val::Px(40.0),
-                                border: UiRect::all(Val::Px(1.0)),
-                                padding: UiRect::all(Val::Px(5.0)),
-                                ..default()
-                            },
-                            border_color: BorderColor(Color::BLACK),
-                            background_color: Color::rgb(0.7, 0.7, 0.7).into(),
-                            ..default()
-                        },
-                        TextBox {
-                            text_style: TextStyle {
-                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                font_size: 30.0,
-                                color: Color::BLACK,
-                            },
-                            id: 1,
-                            ..default()
-                        },
-                    ));
-                });
-            });
+    }
 }
 
-pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>, sprite_data: &Res<SpriteData>) {
+pub fn spawn_community_cards(commands: &mut Commands, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>, sprite_data: &Res<SpriteData>) {
     for cards in com_cards {
         for (index,card) in cards.iter().enumerate() {
             let left_shift = -3. * 81. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
@@ -391,34 +278,6 @@ pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetSe
                 transform: Transform::from_xyz(left_shift,0.,2.),
                 ..default()
             }).insert(CommunityCards {cards: vec![card.clone()],});
-            // commands.spawn(ButtonBundle {
-            //     style: Style {
-            //         position_type: PositionType::Absolute,
-            //         top: Val::Px(317.),
-            //         left: Val::Px(left_shift),
-            //         width: Val::Px(58.0),
-            //         height: Val::Px(93.0),
-            //         border: UiRect::all(Val::Px(3.0)),
-            //         align_self: AlignSelf::Center,
-            //         justify_self: JustifySelf::Center,
-            //         justify_content: JustifyContent::Center,
-            //         align_items: AlignItems::Center,
-            //         ..default()
-            //     },
-            //     border_color: BorderColor(Color::BLACK),
-            //     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-            //     ..default()
-            // }).insert(CommunityCards {cards: vec![card.clone()],})
-            // .with_children(|parent| {
-            //     parent.spawn(TextBundle::from_section(
-            //         card.to_string(),
-            //         TextStyle {
-            //             font: asset_server.load("fonts/Lato-Black.ttf"),
-            //             font_size: 13.0,
-            //             color: Color::rgb(0.9, 0.9, 0.9),
-            //         },
-            //     ));
-            // });
         }
     }
 }
