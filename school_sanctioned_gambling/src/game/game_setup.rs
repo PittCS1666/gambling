@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
+use crate::options::components::OptionsResult;
 use rand::Rng;
 use super::easy_ai_logic::*;
 use bevy::text::BreakLineOn;
@@ -15,8 +16,15 @@ const PLAYER_BLIND_POS: (f32, f32, f32) = (140., -220., 2.);
 pub fn load_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    player_num: Res<NumPlayers>,
+    mut player_num_mut: ResMut<NumPlayers>,
+    mut poker_turn: ResMut<PokerTurn>,
+    options_result: Res<OptionsResult>,
 ) {
+
+    poker_turn.small_blind_val = options_result.small_blind_amount.clone();
+    poker_turn.big_blind_val = options_result.big_blind_amount.clone();
+    player_num_mut.player_count = options_result.num_players.clone();
+
     commands.spawn(SpriteBundle {
         texture: asset_server.load("game_screen.png"),
         transform: Transform::from_xyz(0., 0., 1.),
@@ -24,10 +32,10 @@ pub fn load_game(
     }).insert(Background);
     
     spawn_option_buttons(&mut commands, &asset_server);
-    spawn_players(&mut commands, &asset_server, &player_num);
+    spawn_players(&mut commands, &asset_server, &player_num_mut);
 }
 
-fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, player_num: &Res<NumPlayers>) {
+fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, player_num: &ResMut<NumPlayers>) {
     let ai_pos: Vec<(f32, f32, f32)> = vec![(225., 170., 2.), (435., 10., 2.), (-140., -175., 2.), (-435., 10., 2.), (-225., 170., 2.)];
 
     //spawn player in the same spot every game
@@ -316,6 +324,7 @@ pub fn turn_system(
     mut blind_text_query: Query<Entity, With<Blind>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     sprite_data: Res<SpriteData>,
+    options_result: Res<OptionsResult>,
 ) {
   
   let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
@@ -349,7 +358,7 @@ pub fn turn_system(
                         println!("Phase is now in PreFlop!");
                         let cards = &mut deck.cards;
                         shuffle_cards(cards);
-                        let players_hands = deal_hands(player_count.player_count, cards);
+                        let players_hands = deal_hands(player_count.player_count, cards, options_result.money_per_player);
                         spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query, &sprite_data);
                     //}
                     

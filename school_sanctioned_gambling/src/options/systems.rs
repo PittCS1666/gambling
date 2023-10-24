@@ -9,6 +9,13 @@ use crate::AppState;
 
 pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_ui(&mut commands, &asset_server);
+    let results = OptionsResult {
+        money_per_player: 500,
+        small_blind_amount: 25,
+        big_blind_amount: 50,
+        num_players: 2,
+    }; // these are gonna be the defaults I guess
+    commands.insert_resource(results);
 }
 
 fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
@@ -142,6 +149,7 @@ pub fn play_button_interaction(
     text_ent_query: Query<(Entity, &TextBox)>,
     children_query: Query<&Children>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
+    mut results: ResMut<OptionsResult>,
 ) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
@@ -149,14 +157,26 @@ pub fn play_button_interaction(
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
                 border_color.0 = Color::RED;
 
-                for (ent, _input) in &text_ent_query {
+                for (ent, input) in &text_ent_query {
                     for descendant in children_query.iter_descendants(ent) {
                         if let Ok(text) = text_query.get_mut(descendant) {
-                            info!("{}", text.sections[0].value);
+                            if text.sections[0].value == "" {
+                                continue;
+                            }
+                            let value = text.sections[0].value.parse::<usize>().unwrap(); // should never panic
+                            
+                            match input.id {
+                                1 => results.small_blind_amount = value,
+                                2 => results.big_blind_amount = value,
+                                3 => results.money_per_player = value,
+                                4 => results.num_players = value,
+                                _ => {},
+                            }
+
+                            // note this doesn't do any sanity checking yet!
                         }
                     }
                 }
-
                 app_state_next_state.set(AppState::LocalPlay);
             }
             Interaction::Hovered => {

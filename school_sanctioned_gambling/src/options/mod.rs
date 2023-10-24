@@ -3,7 +3,7 @@ use crate::AppState;
 
 mod systems;
 use systems::*;
-mod components;
+pub mod components;
 
 pub struct OptionsPlugin;
 

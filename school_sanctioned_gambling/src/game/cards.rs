@@ -123,14 +123,14 @@ pub fn load_assets(
     );
 }
 
-pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
+pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usize) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
     for player_id in 0..player_count {
         let hand: Vec<Card> = cards.drain(0..2).collect();
         result.push(Player {
             player_id,
             cards: hand.clone(),
-            cash: 500,
+            cash: starting_cash,
             current_bet: 0,
             has_folded: false,
             has_moved: false,
@@ -281,7 +281,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
             //             });
             //         }
             //     });
-        } else if (player.player_id == 1) { // this is just for midterm progress (AIs cards are shown)
+        } else if player.player_id == 1 { // this is just for midterm progress (AIs cards are shown)
             for (index, card) in player.cards.iter().enumerate() {
                 let transform_x = 250.0 + (index as f32) * (58. + 20.);
                 let transform_y = 103. / 2. + 20.;
