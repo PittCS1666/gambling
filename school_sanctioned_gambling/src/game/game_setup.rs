@@ -315,6 +315,7 @@ pub fn turn_system(
     last_action: ResMut<LastPlayerAction>,
     mut blind_text_query: Query<Entity, With<Blind>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
+    sprite_data: Res<SpriteData>,
 ) {
   
   let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
@@ -349,7 +350,7 @@ pub fn turn_system(
                         let cards = &mut deck.cards;
                         shuffle_cards(cards);
                         let players_hands = deal_hands(player_count.player_count, cards);
-                        spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
+                        spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query, &sprite_data);
                     //}
                     
                     
@@ -444,7 +445,7 @@ pub fn turn_system(
                 println!("Phase is now in flop!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query);
+                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
@@ -456,7 +457,7 @@ pub fn turn_system(
                 println!("Phase is now in Turn!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query);
+                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);
@@ -468,7 +469,7 @@ pub fn turn_system(
                 println!("Phase is now in River!");
                 let cards = &mut deck.cards;
                 let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, &asset_server, flop, &community_query);
+                spawn_community_cards(&mut commands, &asset_server, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
                 process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action);

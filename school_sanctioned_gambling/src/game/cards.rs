@@ -27,11 +27,17 @@ pub enum Suit {
 
 #[derive(Copy, Clone)]
 pub struct Card {
-    pub _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51
+    pub _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51 (also serves as the sprite sheet index)
     pub suit: Suit,
     pub value: u8, // ace: 1, 2: 2, ..., 10: 10, jack: 11, queen: 12, king: 13
     pub card_strength: u8,  //this is the value but it concerts the ace to be 14 instead of 1
 }
+
+#[derive(Resource, Clone)]
+pub struct SpriteData {
+    pub atlas_handle: Handle<TextureAtlas>,
+}
+
 
 impl Card {
     fn new(_card_id: u8, suit: Suit, value: u8) -> Card {
@@ -93,6 +99,28 @@ pub fn init_cards() -> Vec<Card> {
 
 pub fn shuffle_cards(cards: &mut Vec<Card>) {
     cards.shuffle(&mut thread_rng());
+}
+
+pub fn load_assets(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    info!("Loading card assets!");
+    let spritesheet_handle = asset_server.load("spritesheet2.png");
+    let cards_atlas = TextureAtlas::from_grid(
+        spritesheet_handle,
+        Vec2::new(129.,230.),
+        53,
+        1,
+        None,
+        None
+    );
+    commands.insert_resource(
+        SpriteData{
+            atlas_handle: atlases.add(cards_atlas)
+        }
+    );
 }
 
 pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>) -> Vec<Player> {
@@ -168,7 +196,7 @@ pub fn card_function(
     }
 }
 
-pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>) {
+pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, players: &Vec<Player>, query: &mut Query<(Entity, &mut Player)>, sprite_data: &Res<SpriteData>) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
         let mut player_exists = false;
@@ -200,45 +228,77 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
 
         // Only ever show the cards of player 0 i.e. the human player to the screen
         if player.player_id == 0 {
-            let top_shift = 690. - (90. * ((player.player_id as f32) + 1.));
-            commands
-                .spawn(ButtonBundle {
-                    style: Style {
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(top_shift),
-                        left: Val::Px(820.),
-                        width: Val::Px(460.0),
-                        height: Val::Px(90.0),
-                        border: UiRect::all(Val::Px(3.0)),
-                        align_self: AlignSelf::Center,
-                        justify_self: JustifySelf::Center,
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..Default::default()
+            for (index, card) in player.cards.iter().enumerate() {
+                let transform_x = 640. - (2. * 129. + 100.) + (index as f32) * (129. + 40.);
+                let transform_y = -360. + 230. / 2. + 20.;
+                commands.spawn(SpriteSheetBundle{
+                    sprite: TextureAtlasSprite {
+                        index: card._card_id as usize,
+                        // custom_size: Some(Vec2::new(58., 93.)),
+                        ..default()
                     },
-                    border_color: BorderColor(Color::BLACK),
-                    background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-                    ..Default::default()
-                }).insert(VisPlayerCards)
-                .with_children(|parent| {
-                    for (index, card) in player.cards.iter().enumerate() {
-                        let left_shift = 10. + 230. * (index as f32);
-                        parent.spawn(TextBundle::from_section(
-                            card.to_string(),
-                            TextStyle {
-                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                font_size: 30.0,
-                                color: Color::rgb(0.9, 0.9, 0.9),
-                            },
-                        ))
-                        .insert(Style {
-                            position_type: PositionType::Absolute,
-                            left: Val::Px(left_shift),
-                            ..Default::default()
-                        });
-                    }
-                });
+                    texture_atlas: sprite_data.atlas_handle.clone(),
+                    // transform: Transform::from_xyz(left_shift, 317., 2.),
+                    transform: Transform::from_xyz(transform_x, transform_y, 2.),
+                    ..default()
+                }).insert(VisPlayerCards);
+            }
+            // let top_shift = 690. - (90. * ((player.player_id as f32) + 1.));
+            // commands
+            //     .spawn(ButtonBundle {
+            //         style: Style {
+            //             position_type: PositionType::Absolute,
+            //             top: Val::Px(top_shift),
+            //             left: Val::Px(820.),
+            //             width: Val::Px(460.0),
+            //             height: Val::Px(90.0),
+            //             border: UiRect::all(Val::Px(3.0)),
+            //             align_self: AlignSelf::Center,
+            //             justify_self: JustifySelf::Center,
+            //             justify_content: JustifyContent::Center,
+            //             align_items: AlignItems::Center,
+            //             ..Default::default()
+            //         },
+            //         border_color: BorderColor(Color::BLACK),
+            //         background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+            //         ..Default::default()
+            //     }).insert(VisPlayerCards)
+            //     .with_children(|parent| {
+            //         for (index, card) in player.cards.iter().enumerate() {
+            //             let left_shift = 10. + 230. * (index as f32);
+            //             parent.spawn(TextBundle::from_section(
+            //                 card.to_string(),
+            //                 TextStyle {
+            //                     font: asset_server.load("fonts/Lato-Black.ttf"),
+            //                     font_size: 30.0,
+            //                     color: Color::rgb(0.9, 0.9, 0.9),
+            //                 },
+            //             ))
+            //             .insert(Style {
+            //                 position_type: PositionType::Absolute,
+            //                 left: Val::Px(left_shift),
+            //                 ..Default::default()
+            //             });
+            //         }
+            //     });
+        } else if (player.player_id == 1) { // this is just for midterm progress (AIs cards are shown)
+            for (index, card) in player.cards.iter().enumerate() {
+                let transform_x = 250.0 + (index as f32) * (58. + 20.);
+                let transform_y = 103. / 2. + 20.;
+                commands.spawn(SpriteSheetBundle{
+                    sprite: TextureAtlasSprite {
+                        index: card._card_id as usize,
+                        custom_size: Some(Vec2::new(58., 103.)),
+                        ..default()
+                    },
+                    texture_atlas: sprite_data.atlas_handle.clone(),
+                    // transform: Transform::from_xyz(left_shift, 317., 2.),
+                    transform: Transform::from_xyz(transform_x, transform_y, 2.),
+                    ..default()
+                }).insert(VisPlayerCards);
+            }
         }
+
             commands.spawn(TextBundle {
                 style: Style {
                     position_type: PositionType::Absolute,
@@ -316,38 +376,49 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
             });
 }
 
-pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>) {
+pub fn spawn_community_cards(commands: &mut Commands, asset_server: &Res<AssetServer>, com_cards: Vec<Vec<Card>>, community_query: &Query<&CommunityCards>, sprite_data: &Res<SpriteData>) {
     for cards in com_cards {
         for (index,card) in cards.iter().enumerate() {
-            let left_shift = 368. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
-            commands.spawn(ButtonBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(317.),
-                    left: Val::Px(left_shift),
-                    width: Val::Px(58.0),
-                    height: Val::Px(93.0),
-                    border: UiRect::all(Val::Px(3.0)),
-                    align_self: AlignSelf::Center,
-                    justify_self: JustifySelf::Center,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
+            let left_shift = -3. * 81. + ((((community_query.iter().count() as f32) + 1.) * ((index  as f32) + 1.)) * 81.);
+            commands.spawn(SpriteSheetBundle{
+                sprite: TextureAtlasSprite {
+                    index: card._card_id as usize,
+                    custom_size: Some(Vec2::new(58., 103.)),
                     ..default()
                 },
-                border_color: BorderColor(Color::BLACK),
-                background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+                texture_atlas: sprite_data.atlas_handle.clone(),
+                // transform: Transform::from_xyz(left_shift, 317., 2.),
+                transform: Transform::from_xyz(left_shift,0.,2.),
                 ..default()
-            }).insert(CommunityCards {cards: vec![card.clone()],})
-            .with_children(|parent| {
-                parent.spawn(TextBundle::from_section(
-                    card.to_string(),
-                    TextStyle {
-                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                        font_size: 13.0,
-                        color: Color::rgb(0.9, 0.9, 0.9),
-                    },
-                ));
-            });
+            }).insert(CommunityCards {cards: vec![card.clone()],});
+            // commands.spawn(ButtonBundle {
+            //     style: Style {
+            //         position_type: PositionType::Absolute,
+            //         top: Val::Px(317.),
+            //         left: Val::Px(left_shift),
+            //         width: Val::Px(58.0),
+            //         height: Val::Px(93.0),
+            //         border: UiRect::all(Val::Px(3.0)),
+            //         align_self: AlignSelf::Center,
+            //         justify_self: JustifySelf::Center,
+            //         justify_content: JustifyContent::Center,
+            //         align_items: AlignItems::Center,
+            //         ..default()
+            //     },
+            //     border_color: BorderColor(Color::BLACK),
+            //     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+            //     ..default()
+            // }).insert(CommunityCards {cards: vec![card.clone()],})
+            // .with_children(|parent| {
+            //     parent.spawn(TextBundle::from_section(
+            //         card.to_string(),
+            //         TextStyle {
+            //             font: asset_server.load("fonts/Lato-Black.ttf"),
+            //             font_size: 13.0,
+            //             color: Color::rgb(0.9, 0.9, 0.9),
+            //         },
+            //     ));
+            // });
         }
     }
 }
