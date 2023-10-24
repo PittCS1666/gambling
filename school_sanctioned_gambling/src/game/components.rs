@@ -36,6 +36,9 @@ pub struct VisPlayers;
 pub struct VisPlayerCash;
 
 #[derive(Component)]
+pub struct Blind;
+
+#[derive(Component)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -50,9 +53,6 @@ pub struct Player {
     pub big_blind: bool,
     pub small_blind: bool,
 }
-
-#[derive(Component)]
-pub struct Blind;
 
 #[derive(Component)]
 pub struct CommunityCards {
