@@ -203,6 +203,8 @@ pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query:
         for (_entity, mut existing_player) in query.iter_mut() {
             if player.player_id == existing_player.player_id {
                 existing_player.cards = player.cards.clone();
+                existing_player.move_dist = player.move_dist.clone();
+                existing_player.hand_strength = player.hand_strength;
                 player_exists = true;
                 break;
             } else {
