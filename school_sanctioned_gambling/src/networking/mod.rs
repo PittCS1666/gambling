@@ -17,8 +17,8 @@ impl Plugin for NetworkingPlugin {
         .add_systems(OnExit(AppState::OnlinePlay), remove_gui)
 
         //.add_systems(OnEnter(AppState::OnlineServer), remove_gui)
-        .add_systems(OnEnter(AppState::OnlineServer), server_on_enter)
-        .add_systems(Update, server_on_update.run_if(in_state(AppState::OnlineServer)))
+        //.add_systems(OnEnter(AppState::OnlineServer), server_on_enter)
+        //.add_systems(Update, server_on_update.run_if(in_state(AppState::OnlineServer)))
 
         //.add_systems(OnEnter(AppState::OnlineClient), remove_gui)
         .add_systems(OnEnter(AppState::OnlineClient), client_on_enter)
