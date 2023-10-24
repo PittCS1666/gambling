@@ -481,10 +481,12 @@ pub fn turn_system(
                                     player.current_bet = player.cash;
                                     player.cash = 0;
                                     player.is_all_in = true;
+                                    state.current_top_bet = player.current_bet;
                                 } else {
                                     player.cash -= state.small_blind_val;
                                     player.current_bet = state.small_blind_val;
                                     state.pot += state.small_blind_val;
+                                    state.current_top_bet = state.small_blind_val;
                                 }
                                 //spawn blind text
                                 if player.player_id == 0 {
