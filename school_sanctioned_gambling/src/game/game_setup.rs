@@ -313,7 +313,6 @@ pub fn turn_system(
     mut deck: ResMut<Deck>,
     player_count: ResMut<NumPlayers>,
     last_action: ResMut<LastPlayerAction>,
-
     mut blind_text_query: Query<Entity, With<Blind>>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
@@ -345,13 +344,13 @@ pub fn turn_system(
     match state.phase {
         PokerPhase::PreFlop => {
                 if !state.round_started {
-                    if player_entity_query.iter().count() == 0 {
+                    //if player_entity_query.iter().count() == 0 {
                         println!("Phase is now in PreFlop!");
                         let cards = &mut deck.cards;
                         shuffle_cards(cards);
                         let players_hands = deal_hands(player_count.player_count, cards);
                         spawn_player_cards(&mut commands, &asset_server, &players_hands, &mut player_entity_query);
-                    }
+                    //}
                     
                     
                     //loops through the players to find the big and small blinds
@@ -483,8 +482,12 @@ pub fn turn_system(
 
             // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
-            let player_card_bundle = player_card_query.single_mut();
-            commands.entity(player_card_bundle).despawn_recursive();
+            //let player_card_bundle = player_card_query.single_mut();
+            //commands.entity(player_card_bundle).despawn_recursive();
+
+            for player_card_bundle in player_card_query.iter_mut() {
+                commands.entity(player_card_bundle).despawn_recursive();
+            }
 
             for entity in com_entity_query.iter() {
                 commands.entity(entity).despawn();
