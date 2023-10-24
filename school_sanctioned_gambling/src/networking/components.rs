@@ -4,9 +4,6 @@ use bevy::prelude::*;
 pub struct NBundle;
 
 #[derive(Component)]
-pub struct CreateServerButton;
-
-#[derive(Component)]
 pub struct JoinServerButton;
 
 #[derive(Component, Default)]
