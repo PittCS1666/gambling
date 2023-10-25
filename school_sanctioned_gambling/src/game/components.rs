@@ -33,7 +33,7 @@ pub struct VisPlayerCards;
 pub struct VisPlayers;
 
 #[derive(Component)]
-pub struct VisPlayerCash;
+pub struct VisText;
 
 #[derive(Component)]
 pub struct Blind;
