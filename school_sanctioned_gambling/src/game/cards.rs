@@ -286,7 +286,7 @@ pub fn spawn_player_cards(commands: &mut Commands, asset_server: &Res<AssetServe
                     },
                     ..Default::default()
                 })
-                .insert(VisPlayerCash);
+                .insert(VisPlayerBet);
         }
 
         
