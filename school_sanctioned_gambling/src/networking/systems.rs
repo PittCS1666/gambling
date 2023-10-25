@@ -187,35 +187,6 @@ pub fn client_on_update()
     //client::client_tick("");
 }
 
-pub fn create_server_button_interaction(
-    mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ), (Changed<Interaction>, With<CreateServerButton>)>,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = Color::rgb(0.075, 0.118, 0.502).into();
-                border_color.0 = Color::RED;
-
-                app_state_next_state.set(AppState::OnlineServer);
-            }
-            Interaction::Hovered => {
-                *color = Color::rgb(0.133, 0.188, 0.659).into();
-                border_color.0 = Color::WHITE;
-            }
-            Interaction::None => {
-                *color = Color::rgb(0.071, 0.141, 0.753).into();
-                border_color.0 = Color::BLACK;
-            }
-        }
-    }
-}
-
 pub fn join_server_button_interaction(
     mut interaction_query: Query<
     (
