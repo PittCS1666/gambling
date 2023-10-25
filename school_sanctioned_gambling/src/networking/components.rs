@@ -4,10 +4,10 @@ use bevy::prelude::*;
 pub struct NBundle;
 
 #[derive(Component)]
-pub struct CreateServerButton;
+pub struct JoinServerButton;
 
 #[derive(Component)]
-pub struct JoinServerButton;
+pub struct ExitServerButton;
 
 #[derive(Component, Default)]
 pub struct TextBox {
