@@ -447,7 +447,17 @@ pub fn turn_system(
                     let mut game_over: bool = false;
                     if players_no_cash ==  player_count.player_count -1 {
                         println!("Only one player with money left game over");
-                        app_state_next_state.set(AppState::MainMenu);
+                        let mut game_result = GameResult {
+                            id: 0,
+                        };
+
+                        for (_, player) in player_entity_query.iter_mut() {
+                            if player.cash != 0 {
+                                game_result.id = player.player_id;
+                            }
+                        }
+                        commands.insert_resource(game_result);
+                        app_state_next_state.set(AppState::GameOver);
                         game_over = true;
                     }
 

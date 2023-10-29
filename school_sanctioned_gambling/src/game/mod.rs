@@ -5,7 +5,7 @@ mod cards;
 mod game_setup;
 mod buttons;
 mod hand_evaluation;
-mod components;
+pub mod components;
 mod easy_ai_logic;
 
 use game_setup::*;

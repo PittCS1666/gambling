@@ -122,3 +122,8 @@ pub struct TextBox {
 pub struct TextBoxTag {
     pub id: u32,
 }
+
+#[derive(Resource)]
+pub struct GameResult {
+    pub id: usize,
+}
