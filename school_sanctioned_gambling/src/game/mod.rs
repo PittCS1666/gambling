@@ -32,6 +32,7 @@ impl Plugin for GamePlugin {
         .add_systems(OnEnter(AppState::LocalPlay), load_game.after(load_assets))
         .add_systems(OnExit(AppState::LocalPlay), tear_down_game_screen)
         .add_systems(Update, turn_system.run_if(in_state(AppState::LocalPlay)))
+        .add_systems(Update, tick_ai_timer.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, check_button_interaction.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, raise_button_interaction.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, fold_button_interaction.run_if(in_state(AppState::LocalPlay)))

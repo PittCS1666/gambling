@@ -58,7 +58,7 @@ pub struct Player {
 
 
 // Data to store all cfr_data necessary for Hard AI
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CfrData {
     pub strategy: HashMap<String, f64>,
     pub cumulative_strategy: HashMap<String, f64>,
@@ -99,6 +99,11 @@ pub struct PokerTurn {
     pub big_blind_val: usize,
 }
 impl Resource for PokerTurn {
+}
+
+#[derive(Component)]
+pub struct AITimer {
+    pub timer: Timer,
 }
 
 #[derive(Serialize, Deserialize)]
