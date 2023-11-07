@@ -259,22 +259,6 @@ pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query:
                 }).insert(VisPlayerCards);
             }
 
-        } else if player.player_id == 1 { // this is just for midterm progress (AIs cards are shown)
-            for (index, card) in player.cards.iter().enumerate() {
-                let transform_x = 250.0 + (index as f32) * (58. + 20.);
-                let transform_y = 103. / 2. + 20.;
-                commands.spawn(SpriteSheetBundle{
-                    sprite: TextureAtlasSprite {
-                        index: card._card_id as usize,
-                        custom_size: Some(Vec2::new(58., 103.)),
-                        ..default()
-                    },
-                    texture_atlas: sprite_data.atlas_handle.clone(),
-                    // transform: Transform::from_xyz(left_shift, 317., 2.),
-                    transform: Transform::from_xyz(transform_x, transform_y, 2.),
-                    ..default()
-                }).insert(VisPlayerCards);
-            }
         }
     }
 }
