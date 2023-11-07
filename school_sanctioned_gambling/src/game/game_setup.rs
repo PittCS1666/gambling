@@ -558,6 +558,7 @@ pub fn turn_system(
                 move_dist: player.move_dist.clone(),
                 big_blind: false,
                 small_blind: false,
+                cfr_data: player.cfr_data.clone(),
             });
         } 
         spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
