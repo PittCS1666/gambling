@@ -4,6 +4,8 @@ use rand::seq::SliceRandom;
 use bevy::prelude::*;
 use super::hand_evaluation::*;
 use super::easy_ai_logic::*;
+// use super::hard_ai_logic::*;
+use std::collections::HashMap;
 
 pub struct Deck {
     pub cards: Vec<Card>
@@ -125,7 +127,14 @@ pub fn load_assets(
 
 pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usize) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
+
     for player_id in 0..player_count {
+        let mut cfr_data = HashMap::new();
+
+        for hand_category in 0..=9 {
+            cfr_data.insert(hand_category, CfrData::new());
+        }
+
         let hand: Vec<Card> = cards.drain(0..2).collect();
         result.push(Player {
             player_id,
@@ -140,6 +149,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
             move_dist: fill_move_set(),
             big_blind: false,
             small_blind: false,
+            cfr_data,
         });
     }
     result
@@ -225,6 +235,7 @@ pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query:
                 move_dist: fill_move_set(),
                 big_blind: false,
                 small_blind: false,
+                cfr_data: player.cfr_data.clone(),
             });
         }
 
