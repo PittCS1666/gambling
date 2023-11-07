@@ -7,11 +7,14 @@ mod buttons;
 mod hand_evaluation;
 pub mod components;
 mod easy_ai_logic;
+mod hard_ai_logic;
 
 use game_setup::*;
 use cards::*;
 use components::*;
 use buttons::*;
+// use hard_ai_logic::*;
+
 
 
 pub struct GamePlugin;

@@ -2,8 +2,9 @@ use bevy::prelude::*;
 use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
+use super::hard_ai_logic::select_action_for_hand;
 use crate::options::components::OptionsResult;
-use rand::Rng;
+// use rand::Rng;
 use super::easy_ai_logic::*;
 use bevy::text::BreakLineOn;
 use crate::AppState;
@@ -257,7 +258,16 @@ fn process_player_turn(
             if player.player_id != 0 {
                 //once the generate move is completely working this should be the code for the AI decisions
                 if !player.has_folded && !player.is_all_in {
-                    let player_move: String = generate_move(&mut player, &state, community_query);
+                    // let player_move: String = generate_move(&mut player, &state, community_query);
+                    let mut hand_category: usize = 0;
+
+                    if state.phase == PokerPhase::PreFlop {
+                        hand_category = 0;
+                    } else {
+                        hand_category = (generate_post_flop_hand_strength(&mut player.cards, &mut community_query)) as usize;
+                    }
+
+                    let player_move: String = select_action_for_hand(&mut player, hand_category);
                     if player_move.eq("Raise") {
                         state.current_top_bet += 50;
                         println!("Current top bet is now: ${}", state.current_top_bet);
@@ -848,7 +858,7 @@ fn next_player_turn(
     state: &mut ResMut<PokerTurn>,
     player_entity_query: &mut Query<(Entity, &mut Player)>,
     _total_players: usize,
-    mut text_query: &mut Query<&mut Text, With<VisText>>,
+    text_query: &mut Query<&mut Text, With<VisText>>,
     
 ) {
     let mut text = text_query.single_mut();
