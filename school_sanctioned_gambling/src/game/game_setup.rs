@@ -268,7 +268,6 @@ fn process_player_turn(
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
             if player.player_id != 0 {
-                //once the generate move is completely working this should be the code for the AI decisions
                 if !player.has_folded && !player.is_all_in {
                     if timer_query.iter().count() == 0 {
                         commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
