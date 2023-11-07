@@ -28,7 +28,7 @@ pub fn load_game(
     let mut pot = 0;
     let mut top_bet = 0;
 
-    if(options_result.is_loaded_game) {
+    if options_result.is_loaded_game {
         //open the game file and separate into lines
         let mut game_file = File::open("saved_game.txt").expect("Can't open file");
         let mut contents = String::new();
@@ -167,6 +167,16 @@ fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, playe
     }
 }
 
+pub fn tick_ai_timer(
+    mut timer_query: Query<&mut AITimer>,
+    time: Res<Time>,
+    mut state: ResMut<PokerTurn>
+) {
+    if state.current_player != 0 && timer_query.iter().count() > 0{
+        let mut timer = timer_query.single_mut();
+        timer.timer.tick(time.delta());
+    }
+}
 pub fn tear_down_game_screen(
     mut commands: Commands, 
     mut background_query: Query<Entity, With<Background>>, 
@@ -243,6 +253,7 @@ pub fn tear_down_game_screen(
 }
 
 fn process_player_turn(
+    mut commands: &mut Commands,
     current_player: usize,
     state: &mut ResMut<PokerTurn>,
     player_entity_query: &mut Query<(Entity, &mut Player)>,
@@ -250,6 +261,7 @@ fn process_player_turn(
     mut last_action: ResMut<LastPlayerAction>,
     mut text_query: &mut Query<&mut Text, With<VisText>>,
     mut community_query: &mut Query<&CommunityCards>,
+    mut timer_query: &mut Query<(Entity, &mut AITimer)>,
 ) {
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
@@ -257,20 +269,29 @@ fn process_player_turn(
             if player.player_id != 0 {
                 //once the generate move is completely working this should be the code for the AI decisions
                 if !player.has_folded && !player.is_all_in {
-                    let player_move: String = generate_move(&mut player, &state, community_query);
-                    if player_move.eq("Raise") {
-                        state.current_top_bet += 50;
-                        println!("Current top bet is now: ${}", state.current_top_bet);
-                        raise_action(state, player, player_count, &mut last_action, &mut text_query);
-                    }
-                    else if player_move.eq("Call") {
-                        call_action(state, player, player_count, &mut last_action, &mut text_query);
-                    }
-                    else if player_move.eq("Fold") {
-                        fold_action(state, player, player_count, &mut last_action);
+                    if timer_query.iter().count() == 0 {
+                        commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
                     }
                     else {
-                        check_action(state, player, player_count, &mut last_action);
+                        let (timer_entity, timer) = timer_query.single_mut();
+                        if timer.timer.just_finished() {
+                            let player_move: String = generate_move(&mut player, &state, community_query);
+                            if player_move.eq("Raise") {
+                                state.current_top_bet += 50;
+                                println!("Current top bet is now: ${}", state.current_top_bet);
+                                player_raised = raise_action(state, player, player_count, &mut last_action, &mut text_query);
+                            }
+                            else if player_move.eq("Call") {
+                                call_action(state, player, player_count, &mut last_action, &mut text_query);
+                            }
+                            else if player_move.eq("Fold") {
+                                fold_action(state, player, player_count, &mut last_action);
+                            }
+                            else {
+                                check_action(state, player, player_count, &mut last_action);
+                            }
+                            commands.entity(timer_entity).despawn_recursive();
+                        }
                     }
                 } else {
                     state.current_player = (current_player + 1) % player_count.player_count;
@@ -446,6 +467,7 @@ pub fn turn_system(
     sprite_data: Res<SpriteData>,
     mut options_result: ResMut<OptionsResult>,
     mut text_query: Query<&mut Text, With<VisText>>,
+    mut timer_query: Query<(Entity, &mut AITimer)>,
 ) {
     let mut text = text_query.single_mut();
     let ai_blind_pos: Vec<(f32, f32, f32)> = vec![(225., 215., 2.), (435., 55., 2.), (-140., -220., 2.), (-435., 55., 2.), (-225., 215., 2.)];
@@ -728,7 +750,7 @@ pub fn turn_system(
                 }
 
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -740,7 +762,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -752,7 +774,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query); 
         }
@@ -764,7 +786,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }

@@ -91,6 +91,11 @@ pub struct PokerTurn {
 impl Resource for PokerTurn {
 }
 
+#[derive(Component)]
+pub struct AITimer {
+    pub timer: Timer,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct NumPlayers {
     pub player_count: usize
