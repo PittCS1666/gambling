@@ -7,6 +7,9 @@ pub struct Options;
 pub struct PlayButton;
 
 #[derive(Component)]
+pub struct LoadButton;
+
+#[derive(Component)]
 pub struct NBundle;
 
 #[derive(Component, Default, Debug)]
@@ -27,4 +30,5 @@ pub struct OptionsResult {
     pub small_blind_amount: usize,
     pub big_blind_amount: usize,
     pub num_players: usize,
+    pub is_loaded_game: bool,
 }

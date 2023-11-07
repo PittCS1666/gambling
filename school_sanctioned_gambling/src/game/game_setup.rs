@@ -8,6 +8,9 @@ use super::easy_ai_logic::*;
 use bevy::text::BreakLineOn;
 use crate::AppState;
 use bevy::input::keyboard::KeyboardInput;
+use std::fs::File;
+use std::io::prelude::*;
+use serde_json::*;
 
 const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
@@ -19,11 +22,52 @@ pub fn load_game(
     mut player_num_mut: ResMut<NumPlayers>,
     mut poker_turn: ResMut<PokerTurn>,
     options_result: Res<OptionsResult>,
+    sprite_data: Res<SpriteData>,
+    mut community_query: Query<&CommunityCards>,
 ) {
+    let mut player_money = options_result.money_per_player;
+    let mut player_bet = 0;
+    let mut pot = 0;
+    let mut top_bet = 0;
 
-    poker_turn.small_blind_val = options_result.small_blind_amount.clone();
-    poker_turn.big_blind_val = options_result.big_blind_amount.clone();
-    player_num_mut.player_count = options_result.num_players.clone();
+    if(options_result.is_loaded_game) {
+        let mut game_file = File::open("saved_game.txt").expect("Can't open file");
+        let mut contents = String::new();
+        game_file.read_to_string(&mut contents).expect("Cannot read from file");
+        let mut lines: Vec<&str> = contents.split("\n").collect();
+
+        //get the players from the file
+        let players: usize = lines[0].parse().unwrap();
+
+        //spawn the players
+        for i in 0..players {
+            let player: Player = from_str(lines[i + 1]).unwrap();
+            if player.player_id == 0 {
+                player_money = player.cash;
+                player_bet = player.current_bet;
+            }
+            commands.spawn(player);
+        }
+
+        //get the count of community cards from the file
+        let mut com_cards: Vec<Vec<Card>> = Vec::new();
+        let com_card_count: usize = lines[players + 1].parse().unwrap();
+        for i in 0..com_card_count {
+            let com_card: CommunityCards = from_str(lines[players + 2 + i]).unwrap();
+            com_cards.push(com_card.cards);
+        }
+        spawn_community_cards(&mut commands, com_cards, &community_query, &sprite_data)
+
+
+        
+    }
+    else {
+        poker_turn.small_blind_val = options_result.small_blind_amount.clone();
+        poker_turn.big_blind_val = options_result.big_blind_amount.clone();
+        player_num_mut.player_count = options_result.num_players.clone();
+    }
+
+    
 
     commands.spawn(SpriteBundle {
         texture: asset_server.load("game_screen.png"),
@@ -41,7 +85,7 @@ pub fn load_game(
         text: Text {
             sections: vec![
                 TextSection {
-                    value: format!("Cash: ${}\n", options_result.money_per_player),
+                    value: format!("Cash: ${}\n", player_money),
                     style: TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 40.0,
@@ -49,7 +93,7 @@ pub fn load_game(
                     },
                 },
                 TextSection {
-                    value: format!("Your Current Bet: ${}\n", 0),
+                    value: format!("Your Current Bet: ${}\n", player_bet),
                     style: TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 40.0,
@@ -57,7 +101,7 @@ pub fn load_game(
                     },
                 },
                 TextSection {
-                    value: format!("Current Pot: ${}\n", 0),
+                    value: format!("Current Pot: ${}\n", pot),
                     style: TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 40.0,
@@ -65,7 +109,7 @@ pub fn load_game(
                     },
                 },
                 TextSection {
-                    value: format!("Current Top Bet: ${}", 0),
+                    value: format!("Current Top Bet: ${}", top_bet),
                     style: TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 40.0,

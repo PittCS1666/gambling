@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use super::components::*;
 use super::cards::*;
 use crate::AppState;
+use crate::game;
 use serde_json::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::*;
@@ -90,7 +91,7 @@ pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetSer
                     NodeBundle {
                         style: Style {
                             top: Val::Px(215.0),
-                            left: Val::Px(-565.0),
+                            left: Val::Px(-245.0),
                             width: Val::Px(150.0),
                             height: Val::Px(40.0),
                             border: UiRect::all(Val::Px(1.0)),
@@ -175,6 +176,7 @@ pub fn save_buton_interaction(
     state: ResMut<PokerTurn>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     player_count: ResMut<NumPlayers>,
+    mut deck: ResMut<Deck>,
 ) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
@@ -184,18 +186,50 @@ pub fn save_buton_interaction(
 
                 let mut game_file = File::create("saved_game.txt").unwrap();
 
-                writeln!(game_file, "{}", player_count.player_count);
+                writeln!(game_file, "{}", player_count.player_count).expect("could not write to file");
                 
                 for (_, player) in player_entity_query.iter() {
                     let cur_player = to_string(&player).unwrap();
-                    //println!("{}", curPlayer);
-                    writeln!(game_file, "{}", cur_player);
+                    writeln!(game_file, "{}", cur_player).expect("could not write to file");
                 }
+
+                writeln!(game_file, "{}", community_query.iter().count()).expect("could not write to file");
 
                 for cards in community_query.iter() {
                     let cur_cards = to_string(&cards).unwrap();
-                    writeln!(game_file, "{}", cur_cards);
+                    writeln!(game_file, "{}", cur_cards).expect("could not write to file");
                 }
+
+                let cur_state = PokerTurn {
+                    current_player: state.current_player,
+                    phase: state.phase,
+                    round_started: state.round_started,
+                    pot: state.pot,
+                    current_top_bet: state.current_top_bet,
+                    pot_raised: state.pot_raised,
+                    bet_made: state.bet_made,
+                    small_blind: state.small_blind,
+                    big_blind: state.big_blind,
+                    small_blind_val: state.small_blind_val,
+                    big_blind_val: state.big_blind_val,
+                };
+
+                let state_to_save = to_string(&cur_state).unwrap();
+                writeln!(game_file, "{}", state_to_save).expect("could not write to file");
+
+                let mut cards: Vec<Card> = Vec::new();
+                for i in 0..deck.cards.len() {
+                    let card = Card{
+                        _card_id: deck.cards[i]._card_id,
+                        suit: deck.cards[i].suit,
+                        value: deck.cards[i].value,
+                        card_strength: deck.cards[i].card_strength,
+                    };
+                    cards.push(card);
+                }
+                let cur_deck = Deck{cards: cards};
+                let deck_to_save = to_string(&cur_deck).unwrap();
+                writeln!(game_file, "{}", deck_to_save).expect("could not write to file");
                 
                 
                 app_state_next_state.set(AppState::MainMenu);
