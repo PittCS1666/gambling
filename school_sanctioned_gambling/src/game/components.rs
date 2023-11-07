@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 use super::cards::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
 pub struct Background;
@@ -38,7 +39,7 @@ pub struct VisText;
 #[derive(Component)]
 pub struct Blind;
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -64,12 +65,12 @@ pub struct CfrData {
     pub regret_sum: HashMap<String, f64>,
 }
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize)]
 pub struct CommunityCards {
     pub cards: Vec<Card>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum PokerPhase {
     PreFlop,
     Flop,
@@ -83,6 +84,7 @@ pub struct StartingCash {
     starting_cash: usize,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct PokerTurn {
     pub current_player: usize,
     pub phase: PokerPhase,
@@ -99,6 +101,7 @@ pub struct PokerTurn {
 impl Resource for PokerTurn {
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct NumPlayers {
     pub player_count: usize
 }
@@ -137,3 +140,6 @@ pub struct TextBoxTag {
 pub struct GameResult {
     pub id: usize,
 }
+
+#[derive(Component)]
+pub struct SaveButton;

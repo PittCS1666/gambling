@@ -17,6 +17,7 @@ impl Plugin for OptionsPlugin {
         .add_systems(Update, play_button_interaction.run_if(in_state(AppState::Options)))
         .add_systems(Update, make_scrolly.run_if(in_state(AppState::Options)))
         .add_systems(Update, handle_keyboard.run_if(in_state(AppState::Options)))
-        .add_systems(Update, activate.run_if(in_state(AppState::Options)));
+        .add_systems(Update, activate.run_if(in_state(AppState::Options)))
+        .add_systems(Update, load_button_interaction.run_if(in_state(AppState::Options)));
     }
 }

@@ -4,9 +4,11 @@ use rand::seq::SliceRandom;
 use bevy::prelude::*;
 use super::hand_evaluation::*;
 use super::easy_ai_logic::*;
+use serde::{Deserialize, Serialize};
 // use super::hard_ai_logic::*;
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub struct Deck {
     pub cards: Vec<Card>
 }
@@ -19,7 +21,7 @@ pub fn init_cards_resource() -> Deck {
 impl Resource for Deck {
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -27,7 +29,7 @@ pub enum Suit {
     Clubs
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Card {
     pub _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51 (also serves as the sprite sheet index)
     pub suit: Suit,

@@ -29,7 +29,7 @@ impl Plugin for GamePlugin {
         .insert_resource(NumPlayers { player_count: 2 })
         .insert_resource(LastPlayerAction{ action: Some(PlayerAction::None) })
         .add_systems(OnEnter(AppState::LocalPlay), load_assets)
-        .add_systems(OnEnter(AppState::LocalPlay), load_game)
+        .add_systems(OnEnter(AppState::LocalPlay), load_game.after(load_assets))
         .add_systems(OnExit(AppState::LocalPlay), tear_down_game_screen)
         .add_systems(Update, turn_system.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, check_button_interaction.run_if(in_state(AppState::LocalPlay)))
@@ -38,6 +38,7 @@ impl Plugin for GamePlugin {
         .add_systems(Update, call_button_interaction.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, handle_keyboard.run_if(in_state(AppState::LocalPlay)))
         .add_systems(Update, activate.run_if(in_state(AppState::LocalPlay)))
-        .add_systems(Update, make_scrolly.run_if(in_state(AppState::LocalPlay)));
+        .add_systems(Update, make_scrolly.run_if(in_state(AppState::LocalPlay)))
+        .add_systems(Update, save_buton_interaction.run_if(in_state(AppState::LocalPlay)));
     }
 }

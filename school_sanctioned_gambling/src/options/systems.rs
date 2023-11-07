@@ -14,6 +14,7 @@ pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
         small_blind_amount: 25,
         big_blind_amount: 50,
         num_players: 2,
+        is_loaded_game: false,
     }; // these are gonna be the defaults I guess
     commands.insert_resource(results);
 }
@@ -127,6 +128,36 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     },
                 ));
             });
+
+             // spawn load game button
+             parent.spawn(ButtonBundle {
+                style: Style {
+                    width: Val::Px(230.0),
+                    height: Val::Px(90.0),
+                    border: UiRect::all(Val::Px(3.0)),
+                    // horizontally center child text
+                    justify_content: JustifyContent::Center,
+                    // vertically center child text
+                    align_items: AlignItems::Center,
+                    // center the button within its parent container
+                    align_self: AlignSelf::Center,
+                    justify_self: JustifySelf::Center,
+                    ..default()
+                },
+                border_color: BorderColor(Color::BLACK),
+                background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+                ..default()
+            }).insert(LoadButton)
+            .with_children(|parent| {
+                parent.spawn(TextBundle::from_section(
+                    "Load Game",
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                ));
+            });
         });
 }
 
@@ -190,6 +221,41 @@ pub fn play_button_interaction(
         }
     }
 }
+
+
+pub fn load_button_interaction(
+    mut interaction_query: Query<
+    (
+        &Interaction,
+        &mut BackgroundColor,
+        &mut BorderColor,
+    ), (Changed<Interaction>, With<LoadButton>)>,
+    mut text_query: Query<&mut Text, With<TextBoxTag>>,
+    text_ent_query: Query<(Entity, &TextBox)>,
+    children_query: Query<&Children>,
+    mut app_state_next_state: ResMut<NextState<AppState>>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, mut color, mut border_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                *color = Color::rgb(0.075, 0.118, 0.502).into();
+                border_color.0 = Color::RED;
+                results.is_loaded_game = true;
+                app_state_next_state.set(AppState::LocalPlay);
+            }
+            Interaction::Hovered => {
+                *color = Color::rgb(0.133, 0.188, 0.659).into();
+                border_color.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                *color = Color::rgb(0.071, 0.141, 0.753).into();
+                border_color.0 = Color::BLACK;
+            }
+        }
+    }
+}
+
 
 pub fn handle_keyboard(
     mut events: EventReader<KeyboardInput>,
