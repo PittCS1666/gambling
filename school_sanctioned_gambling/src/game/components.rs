@@ -53,6 +53,16 @@ pub struct Player {
     pub move_dist: HashMap<u16, Vec<u16>>,
     pub big_blind: bool,
     pub small_blind: bool,
+    pub cfr_data: HashMap<usize, CfrData>,
+}
+
+
+// Data to store all cfr_data necessary for Hard AI
+#[derive(Clone)]
+pub struct CfrData {
+    pub strategy: HashMap<String, f64>,
+    pub cumulative_strategy: HashMap<String, f64>,
+    pub regret_sum: HashMap<String, f64>,
 }
 
 #[derive(Component, Serialize, Deserialize)]
