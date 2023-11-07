@@ -21,7 +21,10 @@ pub struct TextBoxTag {
     pub id: u32,
 }
 
-#[derive(Resource)]
+#[derive(Component)]
+pub struct ErrorMessageTag;
+
+#[derive(Resource, Clone)]
 pub struct OptionsResult {
     pub money_per_player: usize,
     pub small_blind_amount: usize,

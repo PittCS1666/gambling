@@ -33,23 +33,54 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         }).insert(NBundle)
         .with_children(|parent| {
 
-            //spawn title text
-            parent.spawn(TextBundle::from_section(
-                "Options Menu",
-                TextStyle {
-                    font: asset_server.load("fonts/Lato-Black.ttf"),
-                    font_size: 40.0,
-                    color: Color::rgb(0.9, 0.9, 0.9),
-                })
-            );
+            parent.spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceEvenly,
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                ..default()
+            }).with_children(|parent| {
+                //spawn title text
+                parent.spawn(TextBundle::from_section(
+                    "Options Menu",
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    })
+                );
+
+                parent.spawn((
+                    TextBundle {
+                        text: Text {
+                            sections: vec![
+                                TextSection {
+                                    value: "".to_string(),
+                                    style: TextStyle {
+                                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                                        font_size: 20.0,
+                                        color: Color::rgb(1.0, 0.3, 0.3),
+                                    }
+                                },
+                            ],
+                            ..default()
+                        },
+                        ..default()
+                    },
+                    ErrorMessageTag {},
+                ));
+            });
 
             // do all the text boxes
             let mut counter = 1;
             for label in [
-                "small blind amount: ",
-                "big blind amount: ",
-                "starting money per player: ",
-                "number of players (2-6): ",
+                "small blind amount (default=25): ",
+                "big blind amount (default=50): ",
+                "starting money per player (default=500): ",
+                "number of players (2-6) (default=2): ",
                 ] {
                 parent.spawn(NodeBundle {
                     style: Style {
@@ -146,11 +177,13 @@ pub fn play_button_interaction(
         &mut BorderColor,
     ), (Changed<Interaction>, With<PlayButton>)>,
     mut text_query: Query<&mut Text, With<TextBoxTag>>,
+    mut error_query: Query<&mut Text, (With<ErrorMessageTag>, Without<TextBoxTag>)>,
     text_ent_query: Query<(Entity, &TextBox)>,
     children_query: Query<&Children>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     mut results: ResMut<OptionsResult>,
 ) {
+    let results_clone = results.clone();
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
@@ -172,12 +205,43 @@ pub fn play_button_interaction(
                                 4 => results.num_players = value,
                                 _ => {},
                             }
-
-                            // note this doesn't do any sanity checking yet!
                         }
                     }
                 }
-                app_state_next_state.set(AppState::LocalPlay);
+
+                let mut error_text = error_query.single_mut();
+                let mut problem = false;
+                if results.small_blind_amount >= results.big_blind_amount {
+                    error_text.sections[0].value = "Error: small blind amount must be less than big blind amount".to_string();
+                    problem = true;
+                }
+                if results.num_players < 2 || results.num_players > 6 {
+                    error_text.sections[0].value = "Error: number of players must be between 2 and 6".to_string();
+                    problem = true;
+                }
+                if results.big_blind_amount > results.money_per_player {
+                    error_text.sections[0].value = "Error: blind amounts must be less than the amount of money per player".to_string();
+                    problem = true;
+                }
+                if results.small_blind_amount == 0 {
+                    error_text.sections[0].value = "Error: blind amounts must be nonzero".to_string();
+                    problem = true;
+                }
+                if results.money_per_player == 0 {
+                    error_text.sections[0].value = "Error: amount of money per player must be nonzero".to_string();
+                    problem = true;
+                }
+
+                if problem {
+                    // restore options to default, stay on the options screen
+                    results.small_blind_amount = results_clone.small_blind_amount;
+                    results.big_blind_amount = results_clone.big_blind_amount;
+                    results.money_per_player = results_clone.money_per_player;
+                    results.num_players = results_clone.num_players;
+                } else {
+                    // progress to next screen with given options
+                    app_state_next_state.set(AppState::LocalPlay);
+                }
             }
             Interaction::Hovered => {
                 *color = Color::rgb(0.133, 0.188, 0.659).into();
