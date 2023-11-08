@@ -156,7 +156,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
     }
     result
 }
-#[allow(clippy::if_same_then_else)]
+
 pub fn deal_com_function(cards: &mut Vec<Card>, community_query: &Query<&CommunityCards>) -> Vec<Vec<Card>> {
     let mut result: Vec<Vec<Card>> = Vec::with_capacity(5);
     // Dealing of Flop, Turn, and River

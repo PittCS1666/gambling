@@ -6,7 +6,6 @@ mod game;
 mod options;
 mod networking;
 mod game_over;
-mod online_screen;
 
 use game::*;
 use menu::*;
@@ -14,7 +13,7 @@ use credits::*;
 use options::*;
 use networking::*;
 use game_over::*;
-use online_screen::OnlineScreenPlugin;
+
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
@@ -29,11 +28,9 @@ pub enum AppState {
     OnlinePlay,
     OnlineServer,
     OnlineClient,
-    OnlineStart,
     Credits,
     Options,
     GameOver,
-    
 }
 
 fn main() {
@@ -55,7 +52,6 @@ fn main() {
             OptionsPlugin,
             NetworkingPlugin,
             GameOverPlugin,
-            OnlineScreenPlugin
         ))
         .run();
 }
