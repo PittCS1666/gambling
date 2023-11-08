@@ -7,6 +7,8 @@ pub fn client_init(/*mut in_client: Client*/)
 
 }
 
+#[allow(clippy::let_unit_value)]
+#[allow(clippy::unused_io_amount)]
 pub fn client_tick(server_ip_address: String)
 {
     //192.168.1.171

@@ -190,6 +190,7 @@ pub fn client_on_update()
 
 }
 
+#[allow(clippy::never_loop)]
 pub fn join_server_button_interaction(
     mut interaction_query: Query<
     (
