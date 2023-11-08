@@ -1,4 +1,4 @@
-use super::{AppState, Interaction, Message, User, Users};
+use super::{AppState, Message, User, Users};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
 
@@ -7,7 +7,7 @@ pub(super) fn wait_screen_update(
     mut state: ResMut<NextState<AppState>>,
     users: Res<Users>,
 ) {
-    let Users { ref users, .. } = users.as_ref();
+    let Users { ref users} = users.as_ref();
     egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
         ui.centered_and_justified(|ui| {
             ui.label(egui::RichText::new("Game Lobby").size(30.0).strong())
