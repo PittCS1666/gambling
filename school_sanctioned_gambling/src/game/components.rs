@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 use super::cards::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
 pub struct Background;
@@ -38,7 +39,7 @@ pub struct VisText;
 #[derive(Component)]
 pub struct Blind;
 
-#[derive(Component)]
+#[derive(Component, Serialize, Deserialize)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -52,14 +53,24 @@ pub struct Player {
     pub move_dist: HashMap<u16, Vec<u16>>,
     pub big_blind: bool,
     pub small_blind: bool,
+    pub cfr_data: HashMap<usize, CfrData>,
 }
 
-#[derive(Component)]
+
+// Data to store all cfr_data necessary for Hard AI
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CfrData {
+    pub strategy: HashMap<String, f64>,
+    pub cumulative_strategy: HashMap<String, f64>,
+    pub regret_sum: HashMap<String, f64>,
+}
+
+#[derive(Component, Serialize, Deserialize)]
 pub struct CommunityCards {
     pub cards: Vec<Card>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum PokerPhase {
     PreFlop,
     Flop,
@@ -73,6 +84,7 @@ pub struct StartingCash {
     starting_cash: usize,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct PokerTurn {
     pub current_player: usize,
     pub phase: PokerPhase,
@@ -89,6 +101,12 @@ pub struct PokerTurn {
 impl Resource for PokerTurn {
 }
 
+#[derive(Component)]
+pub struct AITimer {
+    pub timer: Timer,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct NumPlayers {
     pub player_count: usize
 }
@@ -122,3 +140,11 @@ pub struct TextBox {
 pub struct TextBoxTag {
     pub id: u32,
 }
+
+#[derive(Resource)]
+pub struct GameResult {
+    pub id: usize,
+}
+
+#[derive(Component)]
+pub struct SaveButton;

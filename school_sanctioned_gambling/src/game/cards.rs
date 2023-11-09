@@ -4,7 +4,11 @@ use rand::seq::SliceRandom;
 use bevy::prelude::*;
 use super::hand_evaluation::*;
 use super::easy_ai_logic::*;
+use serde::{Deserialize, Serialize};
+// use super::hard_ai_logic::*;
+use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub struct Deck {
     pub cards: Vec<Card>
 }
@@ -17,7 +21,7 @@ pub fn init_cards_resource() -> Deck {
 impl Resource for Deck {
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Suit {
     Hearts,
     Diamonds,
@@ -25,7 +29,7 @@ pub enum Suit {
     Clubs
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Card {
     pub _card_id: u8, // unique card id: hearts 0-12, diamonds 13-25, spades 26-38, clubs 39-51 (also serves as the sprite sheet index)
     pub suit: Suit,
@@ -125,7 +129,14 @@ pub fn load_assets(
 
 pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usize) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
+
     for player_id in 0..player_count {
+        let mut cfr_data = HashMap::new();
+
+        for hand_category in 0..=9 {
+            cfr_data.insert(hand_category, CfrData::new());
+        }
+
         let hand: Vec<Card> = cards.drain(0..2).collect();
         result.push(Player {
             player_id,
@@ -140,6 +151,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
             move_dist: fill_move_set(),
             big_blind: false,
             small_blind: false,
+            cfr_data,
         });
     }
     result
@@ -225,6 +237,7 @@ pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query:
                 move_dist: fill_move_set(),
                 big_blind: false,
                 small_blind: false,
+                cfr_data: player.cfr_data.clone(),
             });
         }
 
@@ -246,22 +259,6 @@ pub fn spawn_player_cards(commands: &mut Commands, players: &Vec<Player>, query:
                 }).insert(VisPlayerCards);
             }
 
-        } else if player.player_id == 1 { // this is just for midterm progress (AIs cards are shown)
-            for (index, card) in player.cards.iter().enumerate() {
-                let transform_x = 250.0 + (index as f32) * (58. + 20.);
-                let transform_y = 103. / 2. + 20.;
-                commands.spawn(SpriteSheetBundle{
-                    sprite: TextureAtlasSprite {
-                        index: card._card_id as usize,
-                        custom_size: Some(Vec2::new(58., 103.)),
-                        ..default()
-                    },
-                    texture_atlas: sprite_data.atlas_handle.clone(),
-                    // transform: Transform::from_xyz(left_shift, 317., 2.),
-                    transform: Transform::from_xyz(transform_x, transform_y, 2.),
-                    ..default()
-                }).insert(VisPlayerCards);
-            }
         }
     }
 }

@@ -14,7 +14,7 @@ pub fn generate_card_strength(val:u8) -> u8{
     }
 }
 
-fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, mut community_query: &mut Query<&CommunityCards>) -> u16 {
+pub fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, community_query: &mut Query<&CommunityCards>) -> u16 {
     /*let mut hand_and_community = vec_hand.clone();
     for vector in &community.cards{
         hand_and_community.push(*vector);
@@ -23,7 +23,7 @@ fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, mut community_quer
     let mut hand_and_community: Vec<Card> = Vec::new();
     hand_and_community.append(&mut hand);
 
-    for mut community_cards in community_query.iter() {
+    for community_cards in community_query.iter() {
         hand_and_community.append(&mut community_cards.cards.to_vec())
     }
 
@@ -41,7 +41,7 @@ pub fn generate_pre_flop_hand_strength(hand: &Vec<Card>) -> u16 {
 }
 
 //Checks rand number w/in ranges to determine move
-pub fn generate_move(mut player: &mut Player, poker_turn: &ResMut<PokerTurn>, mut community_query: &mut Query<&CommunityCards>) -> String{
+pub fn generate_move(player: &mut Player, poker_turn: &ResMut<PokerTurn>, mut community_query: &mut Query<&CommunityCards>) -> String{
     //Check for poker phase
     let mut _num = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
