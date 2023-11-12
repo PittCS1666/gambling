@@ -1,4 +1,4 @@
-use super::{AppState, Interaction};
+use super::{AppState, GameInteraction};
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{RichText, Vec2},
@@ -9,10 +9,12 @@ use bevy_egui::{
 pub(super) fn start_screen_update(
     mut contexts: EguiContexts,
     mut state: ResMut<NextState<AppState>>,
-    mut interaction: ResMut<Interaction>,
+    mut interaction: ResMut<GameInteraction>,
 ) {
-    let Interaction {
-        ref mut server_ip, ref mut name,ref mut code
+    let GameInteraction {
+        ref mut server_ip,
+        ref mut name,
+        ref mut code,
     } = interaction.as_mut();
 
     egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
@@ -41,16 +43,12 @@ pub(super) fn start_screen_update(
 
                 ui.label(RichText::new("Name").size(16.0));
                 ui.add(egui::TextEdit::singleline(name).min_size(Vec2::new(128.0, 16.0)))
-                    .on_hover_text(
-                        "Please write your name",
-                    );
+                    .on_hover_text("Please write your name");
                 ui.end_row();
 
                 ui.label(RichText::new("Code").size(16.0));
                 ui.add(egui::TextEdit::singleline(code).min_size(Vec2::new(128.0, 16.0)))
-                    .on_hover_text(
-                        "Please write your code",
-                    );
+                    .on_hover_text("Please write your code");
                 ui.end_row();
             })
     });

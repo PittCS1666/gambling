@@ -1,4 +1,4 @@
-use super::{AppState, Message, User, Users};
+use super::{AppState, Message, User, UserInfo, Users};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
 
@@ -7,27 +7,33 @@ pub(super) fn wait_screen_update(
     mut state: ResMut<NextState<AppState>>,
     users: Res<Users>,
 ) {
-    let Users { ref users} = users.as_ref();
     egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
         ui.centered_and_justified(|ui| {
             ui.label(egui::RichText::new("Game Lobby").size(30.0).strong())
         });
     });
+    let Users { ref users } = users.as_ref();
+    let users = users.blocking_read();
+    let users_list = users
+        .iter()
+        .map(|User { ip, name, .. }| {
+            let (ip, name) = (ip.to_string(), name.to_string());
+            UserInfo { ip, name }
+        })
+        .collect::<Vec<UserInfo>>();
 
     egui::SidePanel::left("left").show(contexts.ctx_mut(), |ui| {
         if ui.button(RichText::new("Start").size(16.0)).clicked() {
-            users.iter().for_each(|user| {
-                (user.send_message)(Message::Start);
+            users.iter().for_each(|e| {
+                e.send_message.send(Message::Start);
             });
             state.set(AppState::GameRunning);
         }
 
         if ui.button(RichText::new("Back").size(16.0)).clicked() {
             // When click back,will send everyone server is close.
-            users.iter().for_each(|user| {
-                (user.send_message)(Message::Close);
-            });
-            state.set(AppState::StartScreen);
+
+            state.set(AppState::GameEnd);
         }
     });
 
@@ -38,17 +44,14 @@ pub(super) fn wait_screen_update(
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    for User {
-                        ip,
-                        name,
-                        send_message,
-                    } in users.iter()
-                    {
+                    for UserInfo { ip, name } in users_list.iter() {
                         ui.label(RichText::new(name).size(24.0))
                             .on_hover_text(format!("target:{ip:?}"));
 
-                        if ui.label(RichText::new("kick").size(16.0).weak()).clicked() {
-                            send_message(Message::Kick);
+                        if ui.button(RichText::new("kick").size(16.0).weak()).clicked() {
+                            users.iter().for_each(|e| {
+                                e.send_message.blocking_send(Message::Kick(ip.to_string()));
+                            });
                         }
                         ui.end_row();
                     }

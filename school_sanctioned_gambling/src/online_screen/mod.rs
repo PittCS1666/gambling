@@ -1,16 +1,20 @@
+mod client;
 pub mod resource;
+pub mod sd;
 mod start_screen;
 mod wait_screen;
-
 pub(crate) use super::AppState;
 use bevy::prelude::*;
 use bevy_egui::*;
-pub(crate) use resource::{Interaction, User,Users};
+pub(crate) use resource::{GameInteraction, GameSigned, Message, UserInfo, Users};
+pub use sd::S2D;
 pub struct OnlineScreenPlugin;
 
 impl Plugin for OnlineScreenPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Interaction>().init_resource::<Users>()
+        app.init_resource::<GameInteraction>()
+            .init_resource::<Users>()
+            .add_plugins(client::ClientPlugin)
             .add_plugins(EguiPlugin)
             .add_systems(
                 Update,

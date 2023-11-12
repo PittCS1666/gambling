@@ -1,4 +1,4 @@
-use super::{AppState, Interaction, User, Users};
+use super::{AppState, GameInteraction, UserInfo, Users};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
 
@@ -7,7 +7,6 @@ pub(super) fn wait_screen_update(
     mut state: ResMut<NextState<AppState>>,
     users: Res<Users>,
 ) {
-    let Users { ref users } = users.as_ref();
     egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
         ui.centered_and_justified(|ui| {
             ui.label(egui::RichText::new("Game Lobby").size(30.0).strong())
@@ -16,8 +15,7 @@ pub(super) fn wait_screen_update(
 
     egui::SidePanel::left("left").show(contexts.ctx_mut(), |ui| {
         if ui.button(RichText::new("Back").size(16.0)).clicked() {
-
-            state.set(AppState::OnlinePlay);
+            state.set(AppState::OnlineEnd);
         }
     });
 
@@ -28,11 +26,7 @@ pub(super) fn wait_screen_update(
                 .spacing([40.0, 4.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    for User {
-                        ip,
-                        name,
-                    } in users.iter()
-                    {
+                    for UserInfo { ip, name } in users.users.blocking_read().iter() {
                         ui.label(RichText::new(name).size(24.0))
                             .on_hover_text(format!("target:{ip:?}"));
 
