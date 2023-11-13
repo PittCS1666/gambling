@@ -4,7 +4,7 @@ use local_ip_address::local_ip;
 use std::thread;
 
 const PACKET_SIZE: usize = 1024;
-
+#[allow(clippy::unused_io_amount)]
 fn handle_client(mut stream: TcpStream) -> Result<(), Error>
 {
     println!("Client is connecting! Client address: {}", stream.peer_addr()?);
@@ -29,7 +29,6 @@ fn handle_client(mut stream: TcpStream) -> Result<(), Error>
             }
             index += 1;
         }
-
         stream.write(&new_buffer[..bytes_read])?;
     }
 

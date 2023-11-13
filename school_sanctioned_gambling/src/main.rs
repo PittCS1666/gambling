@@ -1,24 +1,23 @@
 use bevy::{prelude::*, window::PresentMode};
 
 mod credits;
-mod menu;
 mod game;
-mod options;
-mod networking;
 mod game_over;
-
-use game::*;
-use menu::*;
+mod menu;
+mod networking;
+mod online_screen;
+mod options;
 use credits::*;
-use options::*;
-use networking::*;
+use game::*;
 use game_over::*;
-
+use menu::*;
+use networking::*;
+use online_screen::*;
+use options::*;
 
 const TITLE: &str = "School Sanctioned Gambling";
 const WIN_WIDTH: f32 = 1280.;
 const WIN_HEIGHT: f32 = 720.;
-
 
 #[derive(States, Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum AppState {
@@ -28,6 +27,8 @@ pub enum AppState {
     OnlinePlay,
     OnlineServer,
     OnlineClient,
+    OnlineEnd,
+    OnlineGamePlaying,
     Credits,
     Options,
     GameOver,
@@ -50,8 +51,8 @@ fn main() {
             CreditsPlugin,
             GamePlugin,
             OptionsPlugin,
-            NetworkingPlugin,
             GameOverPlugin,
+            OnlineScreenPlugin,
         ))
         .run();
 }
