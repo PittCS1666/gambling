@@ -19,17 +19,17 @@ const ROYAL_FLUSH: usize = 9;
 impl CfrData {
     pub fn new() -> CfrData {
         let mut actions = vec!["Fold".to_string(), "Call".to_string(), "Raise".to_string(), "Check".to_string()];
-
         let mut strategy = HashMap::new();
         let mut cumulative_strategy = HashMap::new();
         let mut regret_sum = HashMap::new();
 
         let initial_probability = 1.0 / actions.len() as f64;
 
+        
         for action in actions {
-            strategy.insert(action.clone(), initial_probability);
+            strategy.insert(action.clone(), initial_probability); //For each action, assign a probability of taking that action
             cumulative_strategy.insert(action.clone(), 0.0);
-            regret_sum.insert(action.clone(), 0.0);
+            regret_sum.insert(action.clone(), 0.0); //I think this stores our regret for each action
         }
 
         CfrData {
@@ -40,25 +40,112 @@ impl CfrData {
     }
 }
 
+//Parameters: game phase, other player moves
+pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase, other_players:Vec<PlayerAction>, player_count: usize, prev_likelihood: usize) -> usize{
+    let mut base_likelihood = prev_likelihood;
+    //Look at our updated hand strength and determine if that increases or decreases win likelihood
+    if (game_phase == PokerPhase::PreFlop){
+        if(player.hand_strength <= 4 && player.hand_strength >= 0){
+            if(base_likelihood - 0.12 >= 0){
+                base_likelihood -= 0.12;
+            }else{
+                base_likelihood = 0;
+            }
+        }else if(player.hand_strength > 4 && player.hand_strength <= 8){
+            if(base_likelihood - 0.08 >= 0){
+                base_likelihood -= 0.08;
+            }else{
+                base_likelihood = 0;
+            }
+        }else if(player.hand_strength > 8 && player.hand_strength <= 12){
+            if(base_likelihood - 0.07 >= 0){
+                base_likelihood -= 0.07;
+            }else{
+                base_likelihood = 0;
+            }
+        }else if(player.hand_strength > 12 && player.hand_strength <= 16){
+            continue;
+        }else if(player.hand_strength > 16 && player.hand_strength <= 20){
+            base_likelihood += 0.12
+        }else if(player.hand_strength > 20 && player.hand_strength <= 24){
+            base_likelihood += 0.2
+        }else if(player.hand_strength > 24 && player.hand_strength <= 28){
+            base_likelihood += 0.27
+        }
+    }else{
+        if(player.hand_strength == 30){
+            if(base_likelihood - 0.04 >= 0){
+                base_likelihood -= 0.04;
+            }else{
+                base_likelihood = 0;
+            }
+        }else if(player.hand_strength == 31){
+            base_likelihood += 0.01
+        }else if(player.hand_strength == 32){
+            base_likelihood += 0.02
+        }else if(player.hand_strength == 33){
+            base_likelihood += 0.03
+        }else if(player.hand_strength == 34){
+            base_likelihood += 0.04
+        }else if(player.hand_strength == 35){
+            base_likelihood += 0.05
+        }else if(player.hand_strength == 36){
+            if(base_likelihood += 6 > 1){
+                base_likelihood = 1;
+            }else{
+                base_likelihood += 0.06
+            }
+        }else if(player.hand_strength == 37){
+            if(base_likelihood += 7 > 1){
+                base_likelihood = 1;
+            }else{
+                base_likelihood += 0.07
+            }
+        }
+    }
+    //Each other player move is good or bad to varying degrees depending on my hand
+    for (action in other_players){
+        if(action == "Fold"){
+            base_likelihood += ((1/player_count) - (1/(player_count-1)))
+        }else if(action == "Raise"){
+            base_likelihood -= 0.04; //This amount needs to be relative to hand strength and raise amount
+        }else if(action = "Check"){
+            continue; //Should this change anything?
+        }else{
+            continue; //Not sure how calling should be interpeted
+        }
+    }
+    //If another player...
+    //Raises: Decrease win likelihood to a degree depending on hand strength and game phase
+    //Folds: Improves our win likelihood
+    //Checks or Calls: Depends on our hand
+    //Look at the move we made and determine if that increased or decreased win likelihood
+    let mut utility = base_likelihood - prev_likelihood;
+    //That change is our utility
+    utility
+
+}
 
 // Using the regret for each action determine the new probabilities for each action
 pub fn update_strategy_for_hand(player: &mut Player, hand_category: usize) {
-    if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) {
+    if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) { //Checking if the cfr data for the hand number exists
         let mut normalizing_sum = 0.0;
-        for (_, regret) in cfr_data.regret_sum.iter() {
-            let adjusted_regret = regret.max(0.0);
-            normalizing_sum += adjusted_regret;
+        for (_, regret) in cfr_data.regret_sum.iter() { //For each element in the regret_sum hashmap...
+            let adjusted_regret = regret.max(0.0); //Get the maximum value between regret and 0?
+            normalizing_sum += adjusted_regret; //Add our adjusted regret to the normalizing_sum
         }
 
-        for (action, regret) in cfr_data.regret_sum.iter() {
-            let strategy_value = if normalizing_sum > 0.0 {
-                regret.max(0.0) / normalizing_sum
+        //
+        for (action, regret) in cfr_data.regret_sum.iter() { //Iterating through our regret sums
+            let strategy_value = if normalizing_sum > 0.0 {  
+                regret.max(0.0) / normalizing_sum       //I believe this is the action probability we get using our regret
             } else {
                 1.0 / cfr_data.regret_sum.len() as f64
             };
-            cfr_data.strategy.insert(action.clone(), strategy_value);
+            cfr_data.strategy.insert(action.clone(), strategy_value); //This is where we update the strategy with the new probability
         }
 
+        //Get our cumulative regret for the whole game
         for (action, strategy_value) in cfr_data.strategy.iter() {
             let cumulative_value = cfr_data.cumulative_strategy.entry(action.clone()).or_insert(0.0);
             *cumulative_value += strategy_value;
