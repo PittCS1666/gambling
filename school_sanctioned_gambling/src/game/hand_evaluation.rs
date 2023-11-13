@@ -1,11 +1,11 @@
-use std::collections::HashSet;
 use super::cards::*;
+use std::collections::HashSet;
 
 pub struct Hand {
-    cards: Vec<Card>,   //a vector with the 5 cards in a hand
-    ranks: Vec<u8>,     //a vector that holds the number of each rank that is in the hand
-    suits: u8,          //how many suits are present in the hand
-    pub score: u8           //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
+    cards: Vec<Card>, //a vector with the 5 cards in a hand
+    ranks: Vec<u8>,   //a vector that holds the number of each rank that is in the hand
+    suits: u8,        //how many suits are present in the hand
+    pub score: u8, //the final score of the hand -> 8: Straight flush, 7: Four of a kind, 6: Full house, 5: flush, 4: straight, 3: three of a kind, 2: two pair, 1: pair, 0: high card
 }
 
 impl Hand {
@@ -17,7 +17,7 @@ impl Hand {
             score: 0,
         }
     }
-    pub fn new(cards: Vec<Card>) -> Hand{
+    pub fn new(cards: Vec<Card>) -> Hand {
         let mut suits: HashSet<Suit> = HashSet::new();
         let mut ranks: Vec<u8> = vec![0; 13];
         let score: u8 = 0;
@@ -37,21 +37,34 @@ impl Hand {
         if hand.cards.is_empty() {
             return String::from("No cards in hand");
         }
-                
+
         let card1 = Card::to_string(&hand.cards[0]);
         let card2 = Card::to_string(&hand.cards[1]);
         let card3 = Card::to_string(&hand.cards[2]);
         let card4 = Card::to_string(&hand.cards[3]);
         let card5 = Card::to_string(&hand.cards[4]);
-        
-        String::from(format!("{card1}, {card2}, {card3}, {card4}, and {card5} with a score of {score}",
-            card1 = card1, card2 = card2, card3 = card3, card4 = card4, card5 = card5, score = hand.score.to_string()))
+
+        String::from(format!(
+            "{card1}, {card2}, {card3}, {card4}, and {card5} with a score of {score}",
+            card1 = card1,
+            card2 = card2,
+            card3 = card3,
+            card4 = card4,
+            card5 = card5,
+            score = hand.score.to_string()
+        ))
     }
 }
 
-
-pub fn test_evaluator(player_id: usize, player_cards: Vec<Card>, community_cards: Vec<Card>) -> Hand{
-    let cards: Vec<Card> = player_cards.into_iter().chain(community_cards.into_iter()).collect();
+pub fn test_evaluator(
+    player_id: usize,
+    player_cards: Vec<Card>,
+    community_cards: Vec<Card>,
+) -> Hand {
+    let cards: Vec<Card> = player_cards
+        .into_iter()
+        .chain(community_cards.into_iter())
+        .collect();
     //use println below to see players cards in terminal
     //println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
@@ -59,7 +72,7 @@ pub fn test_evaluator(player_id: usize, player_cards: Vec<Card>, community_cards
     return hand;
 }
 
-pub fn find_best_hand(cards: &Vec<Card>) -> Hand{
+pub fn find_best_hand(cards: &Vec<Card>) -> Hand {
     //there might be a library to get all combinations easily
     if cards.len() == 5 {
         let mut hand: Hand = Hand::new(cards.to_vec());
@@ -71,7 +84,7 @@ pub fn find_best_hand(cards: &Vec<Card>) -> Hand{
 
     let mut best_hand_val = 0;
     let mut best_hand: Hand = Hand::_new_blank();
-    
+
     for combination in combinations {
         let mut cur_hand = Hand::new(combination);
         //println!("Current hand: {:?}", Hand::to_string(&cur_hand));
@@ -79,8 +92,7 @@ pub fn find_best_hand(cards: &Vec<Card>) -> Hand{
         if cur_hand.score > best_hand_val {
             best_hand_val = cur_hand.score;
             best_hand = cur_hand
-        }
-        else if cur_hand.score == best_hand_val {
+        } else if cur_hand.score == best_hand_val {
             let res = compare_hands(&mut cur_hand, &mut best_hand);
             if res == 1 {
                 best_hand_val = cur_hand.score;
@@ -90,38 +102,37 @@ pub fn find_best_hand(cards: &Vec<Card>) -> Hand{
             }
         }
         //println!("Best hand: {:?}", Hand::to_string(&best_hand));
-        
     }
 
     return best_hand;
 }
 
-
 fn get_all_hands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
     let mut combinations: Vec<Vec<Card>> = Vec::new();
-    
+
     for i in 0..cards.len() {
         for j in (i + 1)..cards.len() {
             for k in (j + 1)..cards.len() {
                 for l in (k + 1)..cards.len() {
                     for m in (l + 1)..cards.len() {
-                        let combination = vec![Card::copy(&cards[i]), Card::copy(&cards[j]), Card::copy(&cards[k]), Card::copy(&cards[l]), Card::copy(&cards[m])];
+                        let combination = vec![
+                            Card::copy(&cards[i]),
+                            Card::copy(&cards[j]),
+                            Card::copy(&cards[k]),
+                            Card::copy(&cards[l]),
+                            Card::copy(&cards[m]),
+                        ];
                         combinations.push(combination)
                     }
                 }
             }
         }
     }
-    return combinations
+    return combinations;
 }
 
 pub fn evaluate_hand(hand: &mut Hand) {
-    let is_flush = if hand.suits == 1 {
-        true
-    }
-    else {
-        false
-    };
+    let is_flush = if hand.suits == 1 { true } else { false };
     let is_straight = is_straight(&hand.ranks);
     let mut is_four = false;
     let mut is_three = false;
@@ -131,46 +142,43 @@ pub fn evaluate_hand(hand: &mut Hand) {
     for i in 0..hand.ranks.len() {
         if hand.ranks[i] == 4 {
             is_four = true;
-        }
-        else if hand.ranks[i] == 3 {
+        } else if hand.ranks[i] == 3 {
             is_three = true;
-        }
-        else if hand.ranks[i] == 2 && is_pair {
+        } else if hand.ranks[i] == 2 && is_pair {
             is_two_pair = true;
-        }
-        else if hand.ranks[i] == 2 {
+        } else if hand.ranks[i] == 2 {
             is_pair = true;
         }
     }
 
-    if is_straight && is_flush {    //straight flush
+    if is_straight && is_flush {
+        //straight flush
         hand.score = 8;
-    }
-    else if is_four {  //four of a kind
-       hand.score = 7;
-    }
-    else if is_three && is_pair {  //full house
+    } else if is_four {
+        //four of a kind
+        hand.score = 7;
+    } else if is_three && is_pair {
+        //full house
         hand.score = 6;
-    }
-    else if is_flush {  //flush
+    } else if is_flush {
+        //flush
         hand.score = 5;
-    }
-    else if is_straight {  //straight
+    } else if is_straight {
+        //straight
         hand.score = 4;
-    }
-    else if is_three {  //three of a kind
+    } else if is_three {
+        //three of a kind
         hand.score = 3;
-    }
-    else if is_two_pair {  //two pair
+    } else if is_two_pair {
+        //two pair
         hand.score = 2;
-    }
-    else if is_pair {  //pair
+    } else if is_pair {
+        //pair
         hand.score = 1;
-    }
-    else {  //high card
+    } else {
+        //high card
         hand.score = 0;
     }
-
 }
 
 fn is_straight(ranks: &Vec<u8>) -> bool {
@@ -186,7 +194,7 @@ fn is_straight(ranks: &Vec<u8>) -> bool {
             if i > max_rank {
                 max_rank = i;
             }
-            
+
             if i < min_rank {
                 min_rank = i;
             }
@@ -195,16 +203,13 @@ fn is_straight(ranks: &Vec<u8>) -> bool {
 
     if (max_rank - min_rank) == 4 && unique_ranks == 5 {
         true
-    }
-    else if ace > 0{
+    } else if ace > 0 {
         if (max_rank - min_rank) == 3 && unique_ranks == 5 && (max_rank == 12 || min_rank == 1) {
             true
-        }
-        else {
+        } else {
             false
         }
-    }
-    else {
+    } else {
         false
     }
 }
@@ -216,13 +221,12 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
 
     if score1 > score2 {
         return 1;
-    }
-    else if score2 > score1 {
+    } else if score2 > score1 {
         return 2;
     }
 
-    
-    if score1 == 1 {    //compare pairs
+    if score1 == 1 {
+        //compare pairs
         let pair1 = find_next(&hand1.ranks, 0, 2);
         let pair2 = find_next(&hand2.ranks, 0, 2);
 
@@ -231,8 +235,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         if comparison != 0 {
             return comparison;
         }
-    }
-    else if score1 == 2 {   //compare two-pair
+    } else if score1 == 2 {
+        //compare two-pair
         let pair1 = find_next(&hand1.ranks, 0, 2);
         let pair2 = find_next(&hand2.ranks, 0, 2);
 
@@ -250,8 +254,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         if comparison != 0 {
             return comparison;
         }
-    }
-    else if score1 == 3 {   //compare three of a kind
+    } else if score1 == 3 {
+        //compare three of a kind
         let three1 = find_next(&hand1.ranks, 0, 3);
         let three2 = find_next(&hand2.ranks, 0, 3);
 
@@ -260,8 +264,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         if comparison != 0 {
             return comparison;
         }
-    }
-    else if score1 == 6 {   //compare full house
+    } else if score1 == 6 {
+        //compare full house
         let three1 = find_next(&hand1.ranks, 0, 3);
         let three2 = find_next(&hand2.ranks, 0, 3);
 
@@ -277,9 +281,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         let comparison = compare(pair1, pair2);
 
         return comparison;
-
-    }
-    else if score1 == 7 {   //compare four of a kind
+    } else if score1 == 7 {
+        //compare four of a kind
         let four1 = find_next(&hand1.ranks, 0, 4);
         let four2 = find_next(&hand2.ranks, 0, 4);
 
@@ -289,24 +292,22 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
             return comparison;
         }
     }
-    
+
     let mut ranks1: Vec<usize> = Vec::new();
     let mut ranks2: Vec<usize> = Vec::new();
 
     for i in 0..hand1.ranks.len() {
         if hand1.ranks[i] > 0 {
             if i == 0 {
-                ranks1.append(&mut vec![14]); 
-            }
-            else {
+                ranks1.append(&mut vec![14]);
+            } else {
                 ranks1.append(&mut vec![i]);
             }
         }
         if hand2.ranks[i] > 0 {
             if i == 0 {
-                ranks2.append(&mut vec![14]); 
-            }
-            else {
+                ranks2.append(&mut vec![14]);
+            } else {
                 ranks2.append(&mut vec![i]);
             }
         }
@@ -317,12 +318,11 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
     for i in 0..ranks2.len() {
         if ranks1[i] > ranks2[i] {
             return 1;
-        }
-        else if ranks2[i] > ranks1[i] {
+        } else if ranks2[i] > ranks1[i] {
             return 2;
         }
     }
-    
+
     return 0;
 }
 
@@ -336,11 +336,9 @@ fn compare(mut val1: u8, mut val2: u8) -> u8 {
 
     if val1 > val2 {
         return 1;
-    }
-    else if val2 > val1 {
+    } else if val2 > val1 {
         return 2;
-    }
-    else {
+    } else {
         return 0;
     }
 }
