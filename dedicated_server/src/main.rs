@@ -2,6 +2,7 @@ use bevy::{prelude::*, window::*};
 
 mod server;
 mod startscreen;
+use screen::{ScreenPlugin, ServerPlugin};
 use server::*;
 use startscreen::*;
 
@@ -10,6 +11,8 @@ pub enum AppState {
     #[default]
     StartScreen, // The menu selection/create server button and any other user affordances
     ServerRunning, // Server is now active, right now has just an exit button
+    GameRunning,   // Game Running
+    GameEnd, // if game is over or menu is close,go to this state
 }
 
 fn main()
@@ -29,9 +32,8 @@ fn main()
                 }),
                 ..default()
             }),
-
-            StartScreenPlugin,
-            ServerRunningPlugin,
+            ScreenPlugin,
+            ServerPlugin,
         ))
         .run();
 }

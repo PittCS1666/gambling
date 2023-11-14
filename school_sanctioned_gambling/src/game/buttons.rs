@@ -1,10 +1,10 @@
-use bevy::prelude::*;
-use super::components::*;
 use super::cards::*;
-use crate::AppState;
+use super::components::*;
 use crate::game;
-use serde_json::Result;
+use crate::AppState;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_json::Result;
 use serde_json::*;
 use std::fs::File;
 use std::io::prelude::*;
@@ -13,109 +13,112 @@ pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetSer
     let button_texts = vec!["Check", "Call", "Raise", "Fold"];
     let button_width = 150.0;
     let button_spacing = 10.0;
-    
-    commands.spawn(NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            ..Default::default()
-        },
-        ..Default::default()
-    })
-    .insert(NBundle)
-    .with_children(|parent| {
-        for (index, &text) in button_texts.iter().enumerate() {
-            let mut individual_button_entity = parent.spawn(ButtonBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(600.),
-                    left: Val::Px((index as f32) * (button_width + button_spacing)),
-                    width: Val::Px(button_width),
-                    height: Val::Px(90.0),
-                    border: UiRect::all(Val::Px(3.0)),
-                    align_self: AlignSelf::FlexStart,
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..Default::default()
-                },
-                border_color: BorderColor(Color::BLACK),
-                background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-                ..Default::default()
-            });
-    
-            match text {
-                "Check" => individual_button_entity.insert(CheckButton),
-                "Call" => individual_button_entity.insert(CallButton),
-                "Raise" => individual_button_entity.insert(RaiseButton),
-                "Fold" => individual_button_entity.insert(FoldButton),
-                _ => panic!("Unknown button text: {}", text),
-            };
-
-            individual_button_entity.with_children(|parent| {
-                parent.spawn(TextBundle::from_section(
-                    text,
-                    TextStyle {
-                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                        font_size: 40.0,
-                        color: Color::rgb(0.9, 0.9, 0.9),
-                    },
-                ));
-            });
-        }
-    });
 
     commands
-    .spawn(NodeBundle {
-        style: Style {
-            width: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::SpaceEvenly,
-            flex_direction: FlexDirection::Column,
-            ..default()
-        },
-        ..default()
-    }).insert(NBundle)
-    .with_children(|parent| {
-            parent.spawn(NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                ..default()
-            })
-            .with_children(|parent| {
-                parent.spawn((
-                    NodeBundle {
-                        style: Style {
-                            top: Val::Px(215.0),
-                            left: Val::Px(-245.0),
-                            width: Val::Px(150.0),
-                            height: Val::Px(40.0),
-                            border: UiRect::all(Val::Px(1.0)),
-                            padding: UiRect::all(Val::Px(5.0)),
-                            ..default()
-                        },
-                        border_color: BorderColor(Color::BLACK),
-                        background_color: Color::rgb(0.7, 0.7, 0.7).into(),
-                        ..default()
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(NBundle)
+        .with_children(|parent| {
+            for (index, &text) in button_texts.iter().enumerate() {
+                let mut individual_button_entity = parent.spawn(ButtonBundle {
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        top: Val::Px(600.),
+                        left: Val::Px((index as f32) * (button_width + button_spacing)),
+                        width: Val::Px(button_width),
+                        height: Val::Px(90.0),
+                        border: UiRect::all(Val::Px(3.0)),
+                        align_self: AlignSelf::FlexStart,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..Default::default()
                     },
-                    TextBox {
-                        text_style: TextStyle {
+                    border_color: BorderColor(Color::BLACK),
+                    background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+                    ..Default::default()
+                });
+
+                match text {
+                    "Check" => individual_button_entity.insert(CheckButton),
+                    "Call" => individual_button_entity.insert(CallButton),
+                    "Raise" => individual_button_entity.insert(RaiseButton),
+                    "Fold" => individual_button_entity.insert(FoldButton),
+                    _ => panic!("Unknown button text: {}", text),
+                };
+
+                individual_button_entity.with_children(|parent| {
+                    parent.spawn(TextBundle::from_section(
+                        text,
+                        TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 30.0,
-                            color: Color::BLACK,
+                            font_size: 40.0,
+                            color: Color::rgb(0.9, 0.9, 0.9),
                         },
-                        id: 1,
-                        ..default()
-                    },
-                ));
-            });
+                    ));
+                });
+            }
         });
 
-        commands
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceEvenly,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(NBundle)
+        .with_children(|parent| {
+            parent
+                .spawn(NodeBundle {
+                    style: Style {
+                        width: Val::Percent(100.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                top: Val::Px(215.0),
+                                left: Val::Px(-245.0),
+                                width: Val::Px(150.0),
+                                height: Val::Px(40.0),
+                                border: UiRect::all(Val::Px(1.0)),
+                                padding: UiRect::all(Val::Px(5.0)),
+                                ..default()
+                            },
+                            border_color: BorderColor(Color::BLACK),
+                            background_color: Color::rgb(0.7, 0.7, 0.7).into(),
+                            ..default()
+                        },
+                        TextBox {
+                            text_style: TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 30.0,
+                                color: Color::BLACK,
+                            },
+                            id: 1,
+                            ..default()
+                        },
+                    ));
+                });
+        });
+
+    commands
         .spawn(NodeBundle {
             style: Style {
                 width: Val::Percent(100.0),
@@ -124,52 +127,50 @@ pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetSer
                 ..default()
             },
             ..default()
-        }).insert(NBundle)
+        })
+        .insert(NBundle)
         .with_children(|parent| {
             //spawn local game button
-            parent.spawn(ButtonBundle {
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(5.),
-                    left: Val::Px(195.),
-                    width: Val::Px(230.0),
-                    height: Val::Px(90.0),
-                    border: UiRect::all(Val::Px(3.0)),
-                    // horizontally center child text
-                    justify_content: JustifyContent::Center,
-                    // vertically center child text
-                    align_items: AlignItems::Center,
-                    // center the button within its parent container
-                    align_self: AlignSelf::Center,
-                    justify_self: JustifySelf::Center,
-                    ..default()
-                },
-                border_color: BorderColor(Color::BLACK),
-                background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-                ..default()
-            }).insert(SaveButton)
-            .with_children(|parent| {
-                parent.spawn(TextBundle::from_section(
-                    "Save and Exit",
-                    TextStyle {
-                        font: asset_server.load("fonts/Lato-Black.ttf"),
-                        font_size: 40.0,
-                        color: Color::rgb(0.9, 0.9, 0.9),
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        top: Val::Px(5.),
+                        left: Val::Px(195.),
+                        width: Val::Px(230.0),
+                        height: Val::Px(90.0),
+                        border: UiRect::all(Val::Px(3.0)),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        // center the button within its parent container
+                        align_self: AlignSelf::Center,
+                        justify_self: JustifySelf::Center,
+                        ..default()
                     },
-                ));
-                
-            });
+                    border_color: BorderColor(Color::BLACK),
+                    background_color: Color::rgb(0.071, 0.141, 0.753).into(),
+                    ..default()
+                })
+                .insert(SaveButton)
+                .with_children(|parent| {
+                    parent.spawn(TextBundle::from_section(
+                        "Save and Exit",
+                        TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 40.0,
+                            color: Color::rgb(0.9, 0.9, 0.9),
+                        },
+                    ));
+                });
         });
 }
 
 pub fn save_buton_interaction(
     mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ),
-    (Changed<Interaction>, With<SaveButton>),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
+        (Changed<Interaction>, With<SaveButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     community_query: Query<&CommunityCards>,
@@ -186,14 +187,16 @@ pub fn save_buton_interaction(
 
                 let mut game_file = File::create("saved_game.txt").unwrap();
 
-                writeln!(game_file, "{}", player_count.player_count).expect("could not write to file");
-                
+                writeln!(game_file, "{}", player_count.player_count)
+                    .expect("could not write to file");
+
                 for (_, player) in player_entity_query.iter() {
                     let cur_player = to_string(&player).unwrap();
                     writeln!(game_file, "{}", cur_player).expect("could not write to file");
                 }
 
-                writeln!(game_file, "{}", community_query.iter().count()).expect("could not write to file");
+                writeln!(game_file, "{}", community_query.iter().count())
+                    .expect("could not write to file");
 
                 for cards in community_query.iter() {
                     let cur_cards = to_string(&cards).unwrap();
@@ -220,7 +223,7 @@ pub fn save_buton_interaction(
 
                 let mut cards: Vec<Card> = Vec::new();
                 for i in 0..deck.cards.len() {
-                    let card = Card{
+                    let card = Card {
                         _card_id: deck.cards[i]._card_id,
                         suit: deck.cards[i].suit,
                         value: deck.cards[i].value,
@@ -228,11 +231,10 @@ pub fn save_buton_interaction(
                     };
                     cards.push(card);
                 }
-                let cur_deck = Deck{cards: cards};
+                let cur_deck = Deck { cards: cards };
                 let deck_to_save = to_string(&cur_deck).unwrap();
                 writeln!(game_file, "{}", deck_to_save).expect("could not write to file");
-                
-                
+
                 app_state_next_state.set(AppState::MainMenu);
             }
             Interaction::Hovered => {
@@ -245,22 +247,17 @@ pub fn save_buton_interaction(
             }
         }
     }
-
 }
 
 pub fn check_button_interaction(
     mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ),
-    (Changed<Interaction>, With<CheckButton>),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
+        (Changed<Interaction>, With<CheckButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     state: ResMut<PokerTurn>,
     mut last_action: ResMut<LastPlayerAction>,
-)   {
+) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
@@ -286,23 +283,17 @@ pub fn check_button_interaction(
 
 pub fn raise_button_interaction(
     mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ),
-    (Changed<Interaction>, With<RaiseButton>),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
+        (Changed<Interaction>, With<RaiseButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     mut state: ResMut<PokerTurn>,
     mut text_query: Query<&mut Text, With<TextBoxTag>>,
     mut last_action: ResMut<LastPlayerAction>,
-)   {
-
+) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
-
                 for (_, player) in player_entity_query.iter() {
                     if player.player_id == 0 && state.current_player == 0 {
                         for mut text in text_query.iter_mut() {
@@ -338,17 +329,13 @@ pub fn raise_button_interaction(
 
 pub fn fold_button_interaction(
     mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ),
-    (Changed<Interaction>, With<FoldButton>),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
+        (Changed<Interaction>, With<FoldButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     state: ResMut<PokerTurn>,
     mut last_action: ResMut<LastPlayerAction>,
-)   {
+) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
@@ -374,17 +361,13 @@ pub fn fold_button_interaction(
 
 pub fn call_button_interaction(
     mut interaction_query: Query<
-    (
-        &Interaction,
-        &mut BackgroundColor,
-        &mut BorderColor,
-    ),
-    (Changed<Interaction>, With<CallButton>),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
+        (Changed<Interaction>, With<CallButton>),
     >,
     player_entity_query: Query<(Entity, &mut Player)>,
     state: ResMut<PokerTurn>,
     mut last_action: ResMut<LastPlayerAction>,
-)   {
+) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {

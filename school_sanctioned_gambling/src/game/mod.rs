@@ -1,21 +1,19 @@
-use bevy::prelude::*;
 use crate::AppState;
+use bevy::prelude::*;
 
-mod cards;
-mod game_setup;
 mod buttons;
-mod hand_evaluation;
+mod cards;
 pub mod components;
 mod easy_ai_logic;
+mod game_setup;
+mod hand_evaluation;
 mod hard_ai_logic;
 
-use game_setup::*;
+use buttons::*;
 use cards::*;
 use components::*;
-use buttons::*;
+use game_setup::*;
 // use hard_ai_logic::*;
-
-
 
 pub struct GamePlugin;
 

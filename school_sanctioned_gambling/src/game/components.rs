@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use std::collections::HashMap;
 use super::cards::*;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Component)]
 pub struct Background;
@@ -56,7 +56,6 @@ pub struct Player {
     pub cfr_data: HashMap<usize, CfrData>,
 }
 
-
 // Data to store all cfr_data necessary for Hard AI
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CfrData {
@@ -99,8 +98,7 @@ pub struct PokerTurn {
     pub big_blind_val: usize,
     pub is_first_round: bool,
 }
-impl Resource for PokerTurn {
-}
+impl Resource for PokerTurn {}
 
 #[derive(Component)]
 pub struct AITimer {
@@ -109,17 +107,15 @@ pub struct AITimer {
 
 #[derive(Serialize, Deserialize)]
 pub struct NumPlayers {
-    pub player_count: usize
+    pub player_count: usize,
 }
-impl Resource for NumPlayers {
-}
+impl Resource for NumPlayers {}
 
 #[derive(Default, Debug)]
 pub struct LastPlayerAction {
     pub action: Option<PlayerAction>,
 }
-impl Resource for LastPlayerAction {
-}
+impl Resource for LastPlayerAction {}
 
 #[derive(Debug)]
 pub enum PlayerAction {
