@@ -108,13 +108,14 @@ pub fn load_game(
                             color: Color::rgb(0.9, 0.9, 0.9),
                         },
                     },
+                    ],
+                    alignment: TextAlignment::Center,
+                    linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
+                    ..Default::default()
                 },
-            ],
-            alignment: TextAlignment::Center,
-            linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
-        },
-        ..Default::default()
-    }).insert(VisText);
+                ..Default::default()
+            })
+            .insert(VisText);
 
     commands.spawn(TextBundle {
         style: Style {
@@ -618,6 +619,7 @@ pub fn turn_system(
     mut options_result: ResMut<OptionsResult>,
     mut text_query: Query<&mut Text, With<VisText>>,
     mut timer_query: Query<(Entity, &mut AITimer)>,
+    mut game_result: ResMut<GameResult>,
 ) {
     let mut text_iter = text_query.iter_mut();
     let mut money_text = text_iter.next().unwrap();
@@ -867,7 +869,7 @@ pub fn turn_system(
                                         ..default()
                                     })
                                     .insert(Blind);
-                            } else {
+                            } else if player.player_id == state.small_blind {
                                 commands
                                     .spawn(Text2dBundle {
                                         text: Text::from_section(
@@ -886,8 +888,7 @@ pub fn turn_system(
                                         ..default()
                                     })
                                     .insert(Blind);
-                            }
-                            else if player.player_id == state.big_blind {
+                            } else if player.player_id == state.big_blind {
                                 player.big_blind = true;
                                 if player.cash <= state.big_blind_val {
                                     state.pot += player.cash;
