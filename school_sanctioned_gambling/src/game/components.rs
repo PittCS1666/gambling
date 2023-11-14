@@ -97,6 +97,7 @@ pub struct PokerTurn {
     pub big_blind: usize,
     pub small_blind_val: usize,
     pub big_blind_val: usize,
+    pub is_first_round: bool,
 }
 impl Resource for PokerTurn {
 }

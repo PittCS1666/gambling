@@ -212,6 +212,7 @@ pub fn save_buton_interaction(
                     big_blind: state.big_blind,
                     small_blind_val: state.small_blind_val,
                     big_blind_val: state.big_blind_val,
+                    is_first_round: state.is_first_round,
                 };
 
                 let state_to_save = to_string(&cur_state).unwrap();

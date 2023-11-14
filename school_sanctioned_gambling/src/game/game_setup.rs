@@ -12,6 +12,7 @@ use bevy::input::keyboard::KeyboardInput;
 use std::fs::File;
 use std::io::prelude::*;
 use serde_json::*;
+use std::{thread, time};
 
 const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
@@ -737,7 +738,9 @@ pub fn turn_system(
     match state.phase {
         PokerPhase::PreFlop => {
                 if !state.round_started {
-
+                    if !state.is_first_round {
+                        thread::sleep(time::Duration::from_secs(5));
+                    }
                     let mut game_over: bool = false;
                     if players_no_cash ==  player_count.player_count -1 {
                         println!("Only one player with money left game over");
@@ -939,7 +942,8 @@ pub fn turn_system(
             for (_, mut player) in player_entity_query.iter_mut() {
                 if winner == 0 {
                     if player.player_id == 0 {
-                        turn_text.sections[1].value = format!("You won!");
+                        turn_text.sections[0].value = format!("You won!");
+                        turn_text.sections[1].value = format!("");
                         println!("Player 0 wins and gains a pot of {}\n", state.pot);
                         player.cash += state.pot;
                         money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
@@ -947,7 +951,8 @@ pub fn turn_system(
                     }
                 } else if winner == 1 {
                     if player.player_id == 1 {
-                        turn_text.sections[1].value = format!("AI {} won!", player.player_id);
+                        turn_text.sections[0].value = format!("AI {} won!", player.player_id);
+                        turn_text.sections[1].value = format!("");
                         println!("Player 1 wins and gains a pot of {}\n", state.pot);
                         player.cash += state.pot;
                     }
@@ -958,6 +963,7 @@ pub fn turn_system(
                     money_text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
                 }
            }
+           
 
             state.pot = 0;
             state.current_top_bet = 0;
@@ -967,8 +973,8 @@ pub fn turn_system(
 
             money_text.sections[2].value = format!("Current Pot: ${}\n", 0);
             money_text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
-            turn_text.sections[0].value = format!("");
-            turn_text.sections[1].value = format!("");
+            //turn_text.sections[0].value = format!("");
+            //turn_text.sections[1].value = format!("");
 
             for blind in blind_text_query.iter_mut() {
                 commands.entity(blind).despawn_recursive();
@@ -983,9 +989,9 @@ pub fn turn_system(
                 player.has_raised = false;
                 player.small_blind = false;
             }
-
             state.round_started = false;
             state.phase = PokerPhase::PreFlop;
+            state.is_first_round = false;
         }
     }
 }
