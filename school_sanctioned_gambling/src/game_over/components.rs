@@ -11,4 +11,3 @@ pub struct ExitButton;
 
 #[derive(Component)]
 pub struct ResultText;
-

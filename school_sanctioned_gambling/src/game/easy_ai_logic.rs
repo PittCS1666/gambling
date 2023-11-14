@@ -1,20 +1,23 @@
-use bevy::prelude::*;
-use std::collections::HashMap;
 use super::cards::*;
 use super::components::*;
 use super::hand_evaluation::*;
+use bevy::prelude::*;
 use rand::Rng;
+use std::collections::HashMap;
 
 //Simply sets Ace to strongest card. All others remain the same
-pub fn generate_card_strength(val:u8) -> u8{
-    if val == 1{
+pub fn generate_card_strength(val: u8) -> u8 {
+    if val == 1 {
         14
-    }else{
+    } else {
         val
     }
 }
 
-pub fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, community_query: &mut Query<&CommunityCards>) -> u16 {
+pub fn generate_post_flop_hand_strength(
+    mut hand: &mut Vec<Card>,
+    community_query: &mut Query<&CommunityCards>,
+) -> u16 {
     /*let mut hand_and_community = vec_hand.clone();
     for vector in &community.cards{
         hand_and_community.push(*vector);
@@ -27,8 +30,6 @@ pub fn generate_post_flop_hand_strength(mut hand: &mut Vec<Card>, community_quer
         hand_and_community.append(&mut community_cards.cards.to_vec())
     }
 
-    
-    
     //hand_and_community.append(&mut community_cards.cards);
 
     let best_hand = find_best_hand(&hand_and_community);
@@ -41,54 +42,60 @@ pub fn generate_pre_flop_hand_strength(hand: &Vec<Card>) -> u16 {
 }
 
 //Checks rand number w/in ranges to determine move
-pub fn generate_move(player: &mut Player, poker_turn: &ResMut<PokerTurn>, mut community_query: &mut Query<&CommunityCards>) -> String{
+pub fn generate_move(
+    player: &mut Player,
+    poker_turn: &ResMut<PokerTurn>,
+    mut community_query: &mut Query<&CommunityCards>,
+) -> String {
     //Check for poker phase
     let mut _num = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
 
-    if poker_turn.phase == PokerPhase::PreFlop{
+    if poker_turn.phase == PokerPhase::PreFlop {
         chosen_dist = player.move_dist.get(&player.hand_strength);
-        if player.big_blind && !poker_turn.pot_raised{
+        if player.big_blind && !poker_turn.pot_raised {
             _num = rand::thread_rng().gen_range(0..=100);
-        }else{
+        } else {
             _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
-    }else if poker_turn.phase == PokerPhase::Flop || poker_turn.phase == PokerPhase::Turn || poker_turn.phase == PokerPhase::River{
-        player.hand_strength = generate_post_flop_hand_strength(&mut player.cards, &mut community_query);
+    } else if poker_turn.phase == PokerPhase::Flop
+        || poker_turn.phase == PokerPhase::Turn
+        || poker_turn.phase == PokerPhase::River
+    {
+        player.hand_strength =
+            generate_post_flop_hand_strength(&mut player.cards, &mut community_query);
 
         chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
         if !poker_turn.bet_made {
             _num = rand::thread_rng().gen_range(0..=100);
-        }else{
+        } else {
             _num = rand::thread_rng().gen_range(chosen_dist.unwrap()[0]..=100);
         }
-    }else{
+    } else {
         chosen_dist = player.move_dist.get(&(player.hand_strength + 30 as u16));
         _num = rand::thread_rng().gen_range(0..=100);
     }
 
-    if _num <= chosen_dist.unwrap()[0]{
+    if _num <= chosen_dist.unwrap()[0] {
         "Check".to_string()
-    }else if _num <= chosen_dist.unwrap()[1]{
+    } else if _num <= chosen_dist.unwrap()[1] {
         "Fold".to_string()
-    }else if _num <= chosen_dist.unwrap()[2]{
+    } else if _num <= chosen_dist.unwrap()[2] {
         "Call".to_string()
-    }else{
+    } else {
         "Raise".to_string()
     }
-
 }
 
-//We have a vector of value ranges each representing a pre-flop move. 
+//We have a vector of value ranges each representing a pre-flop move.
 //Then fill up hashmap with key value pair
 //Key: Hand strength, value: ranges
 //Returns hashmap
-pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
+pub fn fill_move_set() -> HashMap<u16, Vec<u16>> {
     let mut move_dist = HashMap::new();
-    
-    //Vector order: check, fold, call, raise
-   let mut vec_of_dists: Vec<Vec<u16>> = vec![
 
+    //Vector order: check, fold, call, raise
+    let mut vec_of_dists: Vec<Vec<u16>> = vec![
         vec![35, 58, 85, 100], //4
         vec![34, 58, 85, 100], //5
         vec![34, 56, 84, 100], //6
@@ -122,27 +129,20 @@ pub fn fill_move_set()->HashMap<u16, Vec<u16>>{
         vec![19, 25, 60, 100], //35
         vec![19, 21, 60, 100], //36
         vec![18, 19, 50, 100], //37
+    ];
 
-   ];
+    //Here we are filling out the postflop and after distributions
+    let mut i = 8;
+    while i > 0 {
+        move_dist.insert((i - 1) + 30, vec_of_dists.pop().unwrap());
 
-   //Here we are filling out the postflop and after distributions
-   let mut i = 8;
-   while i > 0{
-       move_dist.insert(
-           (i-1) + 30,
-           vec_of_dists.pop().unwrap(),
-       );
+        i -= 1;
+    }
 
-       i -= 1;
-   }
-   
-   //Here we are filling out the preflop distributions
+    //Here we are filling out the preflop distributions
     let mut i: u16 = 28;
-    while i > 3{
-        move_dist.insert(
-            i,
-            vec_of_dists.pop().unwrap(),
-        );
+    while i > 3 {
+        move_dist.insert(i, vec_of_dists.pop().unwrap());
 
         i -= 1;
     }

@@ -1,8 +1,7 @@
-use std::collections::HashMap;
-use bevy::prelude::*;
 use super::components::*;
+use bevy::prelude::*;
 use rand::Rng;
-
+use std::collections::HashMap;
 
 // Different values for each hand, these are used as for each hand you will want to have a different probability for different actions
 const HIGH_CARD: usize = 0;
@@ -18,7 +17,12 @@ const ROYAL_FLUSH: usize = 9;
 
 impl CfrData {
     pub fn new() -> CfrData {
-        let mut actions = vec!["Fold".to_string(), "Call".to_string(), "Raise".to_string(), "Check".to_string()];
+        let mut actions = vec![
+            "Fold".to_string(),
+            "Call".to_string(),
+            "Raise".to_string(),
+            "Check".to_string(),
+        ];
 
         let mut strategy = HashMap::new();
         let mut cumulative_strategy = HashMap::new();
@@ -40,7 +44,6 @@ impl CfrData {
     }
 }
 
-
 // Using the regret for each action determine the new probabilities for each action
 pub fn update_strategy_for_hand(player: &mut Player, hand_category: usize) {
     if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) {
@@ -60,12 +63,14 @@ pub fn update_strategy_for_hand(player: &mut Player, hand_category: usize) {
         }
 
         for (action, strategy_value) in cfr_data.strategy.iter() {
-            let cumulative_value = cfr_data.cumulative_strategy.entry(action.clone()).or_insert(0.0);
+            let cumulative_value = cfr_data
+                .cumulative_strategy
+                .entry(action.clone())
+                .or_insert(0.0);
             *cumulative_value += strategy_value;
         }
     }
 }
-
 
 // Based on probability from regret return the action that was chosen
 pub fn select_action_for_hand(player: &mut Player, hand_category: usize) -> String {
@@ -87,9 +92,13 @@ pub fn select_action_for_hand(player: &mut Player, hand_category: usize) -> Stri
     }
 }
 
-
 // After each decision was made determine what the utilities were for the other decisions and update the corresponding regret for that action
-pub fn update_regrets_for_hand(player: &mut Player, hand_category: usize, actual_utility: f64, utilities: HashMap<String, f64>) {
+pub fn update_regrets_for_hand(
+    player: &mut Player,
+    hand_category: usize,
+    actual_utility: f64,
+    utilities: HashMap<String, f64>,
+) {
     if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) {
         for (action, &counterfactual_utility) in utilities.iter() {
             let regret = counterfactual_utility - actual_utility;
