@@ -2,6 +2,7 @@ use bevy::{prelude::*, window::*};
 
 mod server;
 mod startscreen;
+mod screen;
 use screen::{ScreenPlugin, ServerPlugin};
 use server::*;
 use startscreen::*;
