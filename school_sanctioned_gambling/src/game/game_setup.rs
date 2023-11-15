@@ -1,21 +1,20 @@
-use super::buttons::*;
-use super::cards::*;
+use bevy::prelude::*;
 use super::components::*;
+use super::cards::*; 
+use super::buttons::*;
 use super::hard_ai_logic::select_action_for_hand;
 use crate::options::components::OptionsResult;
-use bevy::prelude::*;
 // use rand::Rng;
 use super::easy_ai_logic::*;
+use bevy::text::BreakLineOn;
 use crate::AppState;
 use bevy::input::keyboard::KeyboardInput;
-use bevy::text::BreakLineOn;
-use serde_json::*;
 use std::fs::File;
 use std::io::prelude::*;
 use serde_json::*;
 use std::{thread, time};
 
-const PLAYER_SIZE: f32 = 60.;
+const PLAYER_SIZE: f32 =  60.;
 const PLAYER_POS: (f32, f32, f32) = (140., -175., 2.);
 const PLAYER_BLIND_POS: (f32, f32, f32) = (140., -220., 2.);
 
@@ -35,9 +34,7 @@ pub fn load_game(
         //open the game file and separate into lines
         let mut game_file = File::open("saved_game.txt").expect("Can't open file");
         let mut contents = String::new();
-        game_file
-            .read_to_string(&mut contents)
-            .expect("Cannot read from file");
+        game_file.read_to_string(&mut contents).expect("Cannot read from file");
         let mut lines: Vec<&str> = contents.split("\n").collect();
 
         //get the players from the file
@@ -52,70 +49,69 @@ pub fn load_game(
             }
             commands.spawn(player);
         }
-    } else {
+        
+    }
+    else {
         poker_turn.small_blind_val = options_result.small_blind_amount.clone();
         poker_turn.big_blind_val = options_result.big_blind_amount.clone();
         player_num_mut.player_count = options_result.num_players.clone();
     }
 
-    commands
-        .spawn(SpriteBundle {
-            texture: asset_server.load("game_screen.png"),
-            transform: Transform::from_xyz(0., 0., 1.),
-            ..default()
-        })
-        .insert(Background);
+    
 
-    commands
-        .spawn(TextBundle {
-            style: Style {
-                position_type: PositionType::Absolute,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..Default::default()
-            },
-            text: Text {
-                sections: vec![
-                    TextSection {
-                        value: format!("Cash: ${}\n", player_money),
-                        style: TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
-                        },
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("game_screen.png"),
+        transform: Transform::from_xyz(0., 0., 1.),
+        ..default()
+    }).insert(Background);
+
+    commands.spawn(TextBundle {
+        style: Style {
+            position_type: PositionType::Absolute,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..Default::default()
+        },
+        text: Text {
+            sections: vec![
+                TextSection {
+                    value: format!("Cash: ${}\n", player_money),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
                     },
-                    TextSection {
-                        value: format!("Your Current Bet: ${}\n", player_bet),
-                        style: TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
-                        },
-                    },
-                    TextSection {
-                        value: format!("Current Pot: ${}\n", pot),
-                        style: TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
-                        },
-                    },
-                    TextSection {
-                        value: format!("Current Top Bet: ${}", top_bet),
-                        style: TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
-                        },
-                    },
-                    ],
-                    alignment: TextAlignment::Center,
-                    linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
-                    ..Default::default()
                 },
-                ..Default::default()
-            })
-            .insert(VisText);
+                TextSection {
+                    value: format!("Your Current Bet: ${}\n", player_bet),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                },
+                TextSection {
+                    value: format!("Current Pot: ${}\n", pot),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                },
+                TextSection {
+                    value: format!("Current Top Bet: ${}", top_bet),
+                    style: TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                },
+            ],
+            alignment: TextAlignment::Center,
+            linebreak_behavior: bevy::text::BreakLineOn::AnyCharacter,
+        },
+        ..Default::default()
+    }).insert(VisText);
 
     commands.spawn(TextBundle {
         style: Style {
@@ -150,96 +146,78 @@ pub fn load_game(
         },
         ..Default::default()
     }).insert(VisText);
-
+    
     spawn_option_buttons(&mut commands, &asset_server);
     spawn_players(&mut commands, &asset_server, &player_num_mut);
 }
 
-fn spawn_players(
-    commands: &mut Commands,
-    asset_server: &Res<AssetServer>,
-    player_num: &ResMut<NumPlayers>,
-) {
-    let ai_pos: Vec<(f32, f32, f32)> = vec![
-        (225., 170., 2.),
-        (435., 10., 2.),
-        (-140., -175., 2.),
-        (-435., 10., 2.),
-        (-225., 170., 2.),
-    ];
+fn spawn_players(commands: &mut Commands, asset_server: &Res<AssetServer>, player_num: &ResMut<NumPlayers>) {
+    let ai_pos: Vec<(f32, f32, f32)> = vec![(225., 170., 2.), (435., 10., 2.), (-140., -175., 2.), (-435., 10., 2.), (-225., 170., 2.)];
 
     //spawn player in the same spot every game
-    commands
-        .spawn(SpriteBundle {
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::WHITE,
+            custom_size: Some(Vec2::splat(PLAYER_SIZE)),
+            ..default()
+        },
+        transform: Transform::from_xyz(PLAYER_POS.0, PLAYER_POS.1, PLAYER_POS.2),
+        ..default()
+    }).insert(VisPlayers)
+    .with_children(|parent| {
+        parent.spawn(Text2dBundle {
+                text: Text::from_section("You",
+                TextStyle {
+                    font: asset_server.load("fonts/Lato-Black.ttf"),
+                    font_size: 30.0,
+                    color: Color::BLACK,
+                }),
+                transform: Transform::from_xyz(0., 0., 3.),
+                ..default()
+        });
+    });
+
+    //spawn the AI players
+    for i in 0..player_num.player_count - 1 {
+        commands.spawn(SpriteBundle {
             sprite: Sprite {
                 color: Color::WHITE,
                 custom_size: Some(Vec2::splat(PLAYER_SIZE)),
                 ..default()
             },
-            transform: Transform::from_xyz(PLAYER_POS.0, PLAYER_POS.1, PLAYER_POS.2),
+            transform: Transform::from_xyz(ai_pos[i].0, ai_pos[i].1, ai_pos[i].2),
             ..default()
-        })
-        .insert(VisPlayers)
+        }).insert(VisPlayers)
         .with_children(|parent| {
             parent.spawn(Text2dBundle {
-                text: Text::from_section(
-                    "You",
+                    text: Text::from_section(String::from("AI ") + &(i + 1).to_string(),
                     TextStyle {
                         font: asset_server.load("fonts/Lato-Black.ttf"),
                         font_size: 30.0,
                         color: Color::BLACK,
-                    },
-                ),
-                transform: Transform::from_xyz(0., 0., 3.),
-                ..default()
-            });
-        });
-
-    //spawn the AI players
-    for i in 0..player_num.player_count - 1 {
-        commands
-            .spawn(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::WHITE,
-                    custom_size: Some(Vec2::splat(PLAYER_SIZE)),
-                    ..default()
-                },
-                transform: Transform::from_xyz(ai_pos[i].0, ai_pos[i].1, ai_pos[i].2),
-                ..default()
-            })
-            .insert(VisPlayers)
-            .with_children(|parent| {
-                parent.spawn(Text2dBundle {
-                    text: Text::from_section(
-                        String::from("AI ") + &(i + 1).to_string(),
-                        TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 30.0,
-                            color: Color::BLACK,
-                        },
-                    ),
+                    }),
                     transform: Transform::from_xyz(0., 0., 3.),
                     ..default()
-                });
             });
+        });
     }
 }
 
 pub fn tick_ai_timer(
     mut timer_query: Query<&mut AITimer>,
     time: Res<Time>,
-    mut state: ResMut<PokerTurn>,
+    mut state: ResMut<PokerTurn>
 ) {
-    if state.current_player != 0 && timer_query.iter().count() > 0 {
+    if state.current_player != 0 && timer_query.iter().count() > 0{
         let mut timer = timer_query.single_mut();
         timer.timer.tick(time.delta());
     }
 }
 pub fn tear_down_game_screen(
-    mut commands: Commands,
-    mut background_query: Query<Entity, With<Background>>,
+    mut commands: Commands, 
+    mut background_query: Query<Entity, With<Background>>, 
     mut node_query: Query<Entity, With<NBundle>>,
-    player_entity_query: Query<Entity, With<Player>>,
+    player_entity_query: Query<Entity,  With<Player>>,
     mut player_card_query: Query<Entity, With<VisPlayerCards>>,
     com_entity_query: Query<Entity, With<CommunityCards>>,
     vis_player_query: Query<Entity, With<VisPlayers>>,
@@ -247,6 +225,7 @@ pub fn tear_down_game_screen(
     vis_text_query: Query<Entity, With<VisText>>,
     mut state: ResMut<PokerTurn>,
 ) {
+
     //let node = node_query.single_mut();
     for node in node_query.iter_mut() {
         commands.entity(node).despawn_recursive();
@@ -255,8 +234,9 @@ pub fn tear_down_game_screen(
     //commands.entity(node).despawn_recursive();
 
     let background = background_query.single_mut();
-
+    
     commands.entity(background).despawn_recursive();
+
 
     for entity in blinds_query.iter_mut() {
         commands.entity(entity).despawn_recursive();
@@ -266,6 +246,7 @@ pub fn tear_down_game_screen(
         for entity in player_entity_query.iter() {
             commands.entity(entity).despawn_recursive();
         }
+
     }
 
     if vis_text_query.iter().next().is_some() {
@@ -274,8 +255,9 @@ pub fn tear_down_game_screen(
         }
     }
 
+
     if !player_card_query.is_empty() {
-        //let player_card = player_card_query.single_mut();
+        //let player_card = player_card_query.single_mut(); 
         for player_card in player_card_query.iter_mut() {
             commands.entity(player_card).despawn_recursive();
         }
@@ -286,7 +268,7 @@ pub fn tear_down_game_screen(
             commands.entity(entity).despawn_recursive();
         }
     }
-
+   
     if com_entity_query.iter().next().is_some() {
         for entity in com_entity_query.iter() {
             commands.entity(entity).despawn_recursive();
@@ -328,10 +310,9 @@ fn process_player_turn(
                 if !player.has_folded && !player.is_all_in {
                     turn_text.sections[0].value = format!("It is AI {}'s turn!\n", player.player_id);
                     if timer_query.iter().count() == 0 {
-                        commands.spawn(AITimer {
-                            timer: Timer::from_seconds(5.0, TimerMode::Once),
-                        });
-                    } else {
+                        commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
+                    }
+                    else {
                         let (timer_entity, timer) = timer_query.single_mut();
                         if timer.timer.just_finished() {
                             // let player_move: String = generate_move(&mut player, &state, community_query);
@@ -340,14 +321,10 @@ fn process_player_turn(
                             if state.phase == PokerPhase::PreFlop {
                                 hand_category = 0;
                             } else {
-                                hand_category = (generate_post_flop_hand_strength(
-                                    &mut player.cards,
-                                    &mut community_query,
-                                )) as usize;
+                                hand_category = (generate_post_flop_hand_strength(&mut player.cards, &mut community_query)) as usize;
                             }
 
-                            let player_move: String =
-                                select_action_for_hand(&mut player, hand_category);
+                            let player_move: String = select_action_for_hand(&mut player, hand_category);
                             if player_move.eq("Raise") {
                                 state.current_top_bet += 50;
                                 println!("Current top bet is now: ${}", state.current_top_bet);
@@ -376,25 +353,13 @@ fn process_player_turn(
                         check_action(state, player, player_count, &mut last_action, &mut text_query);
                         break;
                     } else if let Some(PlayerAction::Raise) = last_action.action {
-                        player_raised = raise_action(
-                            state,
-                            player,
-                            player_count,
-                            &mut last_action,
-                            &mut text_query,
-                        );
+                        player_raised = raise_action(state, player, player_count, &mut last_action, &mut text_query);
                         break;
                     } else if let Some(PlayerAction::Fold) = last_action.action {
                         fold_action(state, player, player_count, &mut last_action, &mut text_query);
                         break;
                     } else if let Some(PlayerAction::Call) = last_action.action {
-                        call_action(
-                            state,
-                            player,
-                            player_count,
-                            &mut last_action,
-                            &mut text_query,
-                        );
+                        call_action(state, player, player_count, &mut last_action, &mut text_query);
                         break;
                     }
                 } else {
@@ -415,7 +380,7 @@ fn process_player_turn(
     }
 }
 
-pub fn check_action(
+pub fn check_action (
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
@@ -451,7 +416,7 @@ pub fn check_action(
     }
 }
 
-pub fn raise_action(
+pub fn raise_action (
     state: &mut ResMut<PokerTurn>,
     mut player: Mut<'_, Player>,
     player_count: &ResMut<NumPlayers>,
@@ -472,6 +437,7 @@ pub fn raise_action(
             turn_text.sections[1].value = format!("AI {} raised the bet to {}", player.player_id, state.current_top_bet);
         }
         println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
+
         player.has_moved = true;
         player.has_raised = true;
         player.cash -= state.current_top_bet - player.current_bet;
@@ -493,7 +459,7 @@ pub fn raise_action(
             }
             println!("Player {} has gone all in!", player.player_id);
         }
-
+        
         last_action.action = Some(PlayerAction::None);
         state.current_player = (state.current_player + 1) % player_count.player_count;
         return true;
@@ -619,7 +585,6 @@ pub fn turn_system(
     mut options_result: ResMut<OptionsResult>,
     mut text_query: Query<&mut Text, With<VisText>>,
     mut timer_query: Query<(Entity, &mut AITimer)>,
-    mut game_result: ResMut<GameResult>,
 ) {
     let mut text_iter = text_query.iter_mut();
     let mut money_text = text_iter.next().unwrap();
@@ -635,83 +600,60 @@ pub fn turn_system(
         for (_, mut player) in player_entity_query.iter_mut() {
             if player.player_id == 0 {
                 if player.big_blind {
-                    commands
-                        .spawn(Text2dBundle {
-                            text: Text::from_section(
-                                "BB",
-                                TextStyle {
-                                    font: asset_server.load("fonts/Lato-Black.ttf"),
-                                    font_size: 25.,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            transform: Transform::from_xyz(
-                                PLAYER_BLIND_POS.0,
-                                PLAYER_BLIND_POS.1,
-                                PLAYER_BLIND_POS.2,
-                            ),
-                            ..default()
-                        })
-                        .insert(Blind);
-                } else if player.small_blind {
-                    commands
-                        .spawn(Text2dBundle {
-                            text: Text::from_section(
-                                "SB",
-                                TextStyle {
-                                    font: asset_server.load("fonts/Lato-Black.ttf"),
-                                    font_size: 25.,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            transform: Transform::from_xyz(
-                                PLAYER_BLIND_POS.0,
-                                PLAYER_BLIND_POS.1,
-                                PLAYER_BLIND_POS.2,
-                            ),
-                            ..default()
-                        })
-                        .insert(Blind);
+                    commands.spawn(Text2dBundle {
+                        text: Text::from_section("BB", TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 25.,
+                            color: Color::WHITE,
+                        }),
+                        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                        ..default()
+                    })
+                    .insert(Blind);
                 }
-            } else {
+                else if player.small_blind {
+                    commands.spawn(Text2dBundle {
+                        text: Text::from_section("SB", TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 25.,
+                            color: Color::WHITE,
+                        }),
+                        transform: Transform::from_xyz(PLAYER_BLIND_POS.0, PLAYER_BLIND_POS.1, PLAYER_BLIND_POS.2),
+                        ..default()
+                    })
+                    .insert(Blind);
+                }
+            }
+            else {
                 if player.big_blind {
-                    commands
-                        .spawn(Text2dBundle {
-                            text: Text::from_section(
-                                "BB",
-                                TextStyle {
-                                    font: asset_server.load("fonts/Lato-Black.ttf"),
-                                    font_size: 25.,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            transform: Transform::from_xyz(
-                                ai_blind_pos[player.player_id - 1].0,
-                                ai_blind_pos[player.player_id - 1].1,
-                                ai_blind_pos[player.player_id - 1].2,
-                            ),
-                            ..default()
-                        })
-                        .insert(Blind);
-                } else if player.small_blind {
-                    commands
-                        .spawn(Text2dBundle {
-                            text: Text::from_section(
-                                "SB",
-                                TextStyle {
-                                    font: asset_server.load("fonts/Lato-Black.ttf"),
-                                    font_size: 25.,
-                                    color: Color::WHITE,
-                                },
-                            ),
-                            transform: Transform::from_xyz(
-                                ai_blind_pos[player.player_id - 1].0,
-                                ai_blind_pos[player.player_id - 1].1,
-                                ai_blind_pos[player.player_id - 1].2,
-                            ),
-                            ..default()
-                        })
-                        .insert(Blind);
+                    commands.spawn(Text2dBundle {
+                        text: Text::from_section("BB", TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 25.,
+                            color: Color::WHITE,
+                        }),
+                        transform: Transform::from_xyz(
+                            ai_blind_pos[player.player_id - 1].0,
+                            ai_blind_pos[player.player_id - 1].1,
+                            ai_blind_pos[player.player_id - 1].2),
+                        ..default()
+                    })
+                    .insert(Blind);
+                }
+                else if player.small_blind {
+                    commands.spawn(Text2dBundle {
+                        text: Text::from_section("SB", TextStyle {
+                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                            font_size: 25.,
+                            color: Color::WHITE,
+                        }),
+                        transform: Transform::from_xyz(
+                            ai_blind_pos[player.player_id - 1].0,
+                            ai_blind_pos[player.player_id - 1].1,
+                            ai_blind_pos[player.player_id - 1].2),
+                        ..default()
+                    })
+                    .insert(Blind);
                 }
             }
             players_hands.push(Player {
@@ -729,36 +671,27 @@ pub fn turn_system(
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
             });
-        }
-        spawn_player_cards(
-            &mut commands,
-            &players_hands,
-            &mut player_entity_query,
-            &sprite_data,
-        );
-
+        } 
+        spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
+        
         //get file contents
         let mut game_file = File::open("saved_game.txt").expect("Can't open file");
         let mut contents = String::new();
-        game_file
-            .read_to_string(&mut contents)
-            .expect("Cannot read from file");
+        game_file.read_to_string(&mut contents).expect("Cannot read from file");
         let mut lines: Vec<&str> = contents.split("\n").collect();
 
         //spawn community cards
         let mut com_cards: Vec<Vec<Card>> = Vec::new();
         let com_card_count: usize = lines[player_count.player_count + 1].parse().unwrap();
         for i in 0..com_card_count {
-            let com_card: CommunityCards =
-                from_str(lines[player_count.player_count + 2 + i]).unwrap();
+            let com_card: CommunityCards = from_str(lines[player_count.player_count + 2 + i]).unwrap();
             com_cards.push(com_card.cards);
         }
         println!("{}", to_string(&com_cards).unwrap());
         spawn_community_cards(&mut commands, com_cards, &community_query, &sprite_data);
 
         //update state resource
-        let new_state: PokerTurn =
-            from_str(lines[player_count.player_count + com_card_count + 2]).unwrap();
+        let new_state: PokerTurn = from_str(lines[player_count.player_count + com_card_count + 2]).unwrap();
         state.current_player = new_state.current_player;
         state.phase = new_state.phase;
         state.round_started = new_state.round_started;
@@ -776,35 +709,31 @@ pub fn turn_system(
         money_text.sections[3].value = format!("Current Top Bet: ${}", state.current_top_bet);
 
         //update deck
-        let new_deck: Deck =
-            from_str(lines[player_count.player_count + com_card_count + 3]).unwrap();
+        let new_deck: Deck = from_str(lines[player_count.player_count + com_card_count + 3]).unwrap();
         deck.cards = new_deck.cards;
     }
 
-    let current_player_moved = player_entity_query
-        .iter()
+    let current_player_moved = player_entity_query.iter()
         .find_map(|(_entity, player)| {
             if player.player_id == state.current_player {
                 Some(player.has_moved)
             } else {
                 None
             }
-        })
-        .unwrap_or(false);
+        }).unwrap_or(false);
 
-    let players_no_cash = player_entity_query
-        .iter()
-        .filter(|(_entity, player)| player.cash == 0)
-        .count();
-
+    
+    let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
+   
+    
     // If only one player left go straight to showdown phase
-    let active_players_count = player_entity_query
-        .iter()
-        .filter(|(_entity, player)| !player.has_folded)
-        .count();
+    let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
     if active_players_count == 1 {
         state.phase = PokerPhase::Showdown;
     }
+
+    
+    
 
     match state.phase {
         PokerPhase::PreFlop => {
@@ -824,11 +753,11 @@ pub fn turn_system(
                                 game_result.id = player.player_id;
                             }
                         }
+                        commands.insert_resource(game_result);
+                        app_state_next_state.set(AppState::GameOver);
+                        game_over = true;
                     }
-                    commands.insert_resource(game_result);
-                    app_state_next_state.set(AppState::GameOver);
-                    game_over = true;
-                }
+
                     println!("Phase is now in PreFlop!");
                     let cards = &mut deck.cards;
                     shuffle_cards(cards);
@@ -869,26 +798,24 @@ pub fn turn_system(
                                         ..default()
                                     })
                                     .insert(Blind);
-                            } else if player.player_id == state.small_blind {
-                                commands
-                                    .spawn(Text2dBundle {
-                                        text: Text::from_section(
-                                            "SB",
-                                            TextStyle {
-                                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                                font_size: 25.,
-                                                color: Color::WHITE,
-                                            },
-                                        ),
+                                }
+                                else {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("SB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
                                         transform: Transform::from_xyz(
                                             ai_blind_pos[player.player_id - 1].0,
                                             ai_blind_pos[player.player_id - 1].1,
-                                            ai_blind_pos[player.player_id - 1].2,
-                                        ),
+                                            ai_blind_pos[player.player_id - 1].2),
                                         ..default()
                                     })
                                     .insert(Blind);
-                            } else if player.player_id == state.big_blind {
+                                }
+                            }
+                            else if player.player_id == state.big_blind {
                                 player.big_blind = true;
                                 if player.cash <= state.big_blind_val {
                                     state.pot += player.cash;
@@ -921,53 +848,34 @@ pub fn turn_system(
                                         ..default()
                                     })
                                     .insert(Blind);
-                            } else {
-                                commands
-                                    .spawn(Text2dBundle {
-                                        text: Text::from_section(
-                                            "BB",
-                                            TextStyle {
-                                                font: asset_server.load("fonts/Lato-Black.ttf"),
-                                                font_size: 25.,
-                                                color: Color::WHITE,
-                                            },
-                                        ),
+                                }
+                                else {
+                                    commands.spawn(Text2dBundle {
+                                        text: Text::from_section("BB", TextStyle {
+                                            font: asset_server.load("fonts/Lato-Black.ttf"),
+                                            font_size: 25.,
+                                            color: Color::WHITE,
+                                        }),
                                         transform: Transform::from_xyz(
                                             ai_blind_pos[player.player_id - 1].0,
                                             ai_blind_pos[player.player_id - 1].1,
-                                            ai_blind_pos[player.player_id - 1].2,
-                                        ),
+                                            ai_blind_pos[player.player_id - 1].2),
                                         ..default()
                                     })
                                     .insert(Blind);
+                                }
                             }
                         }
+                        state.round_started = true;
+                        println!("Pot is: {}", state.pot);
                     }
-                    state.round_started = true;
-                    println!("Pot is: {}", state.pot);
+                    state.current_player = (state.big_blind + 1) % player_count.player_count;
                 }
-                state.current_player = (state.big_blind + 1) % player_count.player_count;
-            }
 
             if !current_player_moved {
-                process_player_turn(
-                    &mut commands,
-                    state.current_player,
-                    &mut state,
-                    &mut player_entity_query,
-                    &player_count,
-                    last_action,
-                    &mut text_query,
-                    &mut community_query,
-                    &mut timer_query,
-                );
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
-            next_player_turn(
-                &mut state,
-                &mut player_entity_query,
-                player_count.player_count,
-                &mut text_query,
-            );
+            next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
         PokerPhase::Flop => {
             if community_query.iter().count() < 3 {
@@ -977,24 +885,9 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(
-                    &mut commands,
-                    state.current_player,
-                    &mut state,
-                    &mut player_entity_query,
-                    &player_count,
-                    last_action,
-                    &mut text_query,
-                    &mut community_query,
-                    &mut timer_query,
-                );
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
-            next_player_turn(
-                &mut state,
-                &mut player_entity_query,
-                player_count.player_count,
-                &mut text_query,
-            );
+            next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
         PokerPhase::Turn => {
             if community_query.iter().count() < 4 {
@@ -1004,24 +897,9 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(
-                    &mut commands,
-                    state.current_player,
-                    &mut state,
-                    &mut player_entity_query,
-                    &player_count,
-                    last_action,
-                    &mut text_query,
-                    &mut community_query,
-                    &mut timer_query,
-                );
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
-            next_player_turn(
-                &mut state,
-                &mut player_entity_query,
-                player_count.player_count,
-                &mut text_query,
-            );
+            next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query); 
         }
         PokerPhase::River => {
             if community_query.iter().count() < 5 {
@@ -1031,35 +909,14 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(
-                    &mut commands,
-                    state.current_player,
-                    &mut state,
-                    &mut player_entity_query,
-                    &player_count,
-                    last_action,
-                    &mut text_query,
-                    &mut community_query,
-                    &mut timer_query,
-                );
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
             }
-            next_player_turn(
-                &mut state,
-                &mut player_entity_query,
-                player_count.player_count,
-                &mut text_query,
-            );
+            next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
         PokerPhase::Showdown => {
             // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
             // and remove the entities so that player_entity_query can be used in this instance
-            let mut winner = card_function(
-                &community_query,
-                &player_entity_query
-                    .iter()
-                    .map(|(_, player)| player)
-                    .collect::<Vec<&Player>>(),
-            );
+            let mut winner = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
 
             if active_players_count == 1 {
                 for (_, player) in player_entity_query.iter_mut() {
@@ -1106,6 +963,7 @@ pub fn turn_system(
                     money_text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
                 }
            }
+           
 
             state.pot = 0;
             state.current_top_bet = 0;
@@ -1121,6 +979,7 @@ pub fn turn_system(
             for blind in blind_text_query.iter_mut() {
                 commands.entity(blind).despawn_recursive();
             }
+
 
             for (_, mut player) in player_entity_query.iter_mut() {
                 player.has_folded = false;
@@ -1142,16 +1001,14 @@ fn next_player_turn(
     player_entity_query: &mut Query<(Entity, &mut Player)>,
     _total_players: usize,
     text_query: &mut Query<&mut Text, With<VisText>>,
+    
 ) {
     let mut text = text_query.iter_mut().next().unwrap();
     let players_moved_count = player_entity_query.iter().filter(|(_entity, player)| player.has_moved && !player.has_folded).count();
 
-    let active_players_count = player_entity_query
-        .iter()
-        .filter(|(_entity, player)| !player.has_folded)
-        .count();
+    let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
 
-    if players_moved_count == active_players_count && player_entity_query.iter().count() > 0 {
+    if players_moved_count == active_players_count && player_entity_query.iter().count() > 0{
         match state.phase {
             PokerPhase::PreFlop => {
                 for (_entity, mut player) in player_entity_query.iter_mut() {
@@ -1205,6 +1062,7 @@ pub fn handle_keyboard(
     text_input_query: Query<(Entity, &TextBox)>,
     children_query: Query<&Children>,
 ) {
+
     for (input_entity, textbox) in &text_input_query {
         if !textbox.active {
             continue;
@@ -1267,7 +1125,10 @@ pub fn activate(
     }
 }
 
-pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Added<TextBox>>) {
+pub fn make_scrolly(
+    mut commands: Commands,
+    query: Query<(Entity, &TextBox), Added<TextBox>>,
+) {
     /*
     aight so basically this pretty much only runs once
     it gets called every loop because its tied to the update event in mod.rs but Added<TextBox>
@@ -1279,6 +1140,7 @@ pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Add
 
     // why is box a reserved keyword
     for (entity, textbox) in &query {
+
         commands.entity(entity).insert(Interaction::None); // make it responsive to click interactions
 
         // make the area for the text to be in and identify it with the TextBoxTag component
@@ -1287,10 +1149,12 @@ pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Add
                 TextBundle {
                     text: Text {
                         linebreak_behavior: BreakLineOn::NoWrap,
-                        sections: vec![TextSection {
-                            value: "".to_string(),
-                            style: textbox.text_style.clone(),
-                        }],
+                        sections: vec![
+                            TextSection {
+                                value: "".to_string(),
+                                style: textbox.text_style.clone(),
+                            },
+                        ],
                         ..default()
                     },
                     ..default()
@@ -1300,14 +1164,14 @@ pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Add
                 },
             ))
             .id();
-
+        
         // define overflow behavior
         let overflow_fixer = commands
             .spawn(NodeBundle {
                 style: Style {
                     justify_content: JustifyContent::FlexEnd, // shove it all to the left
-                    max_width: Val::Percent(100.),            // make it go all the way to the end
-                    overflow: Overflow::clip(),               // cut it off so it ain't visible
+                    max_width: Val::Percent(100.), // make it go all the way to the end
+                    overflow: Overflow::clip(), // cut it off so it ain't visible
                     ..default()
                 },
                 ..default()
