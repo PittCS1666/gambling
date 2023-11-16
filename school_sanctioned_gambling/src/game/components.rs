@@ -116,7 +116,7 @@ pub struct LastPlayerAction {
 }
 impl Resource for LastPlayerAction {}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PlayerAction {
     Raise,
     Check,
