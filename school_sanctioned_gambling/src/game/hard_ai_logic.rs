@@ -120,14 +120,14 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                     }
                 }else{
                     if player.hand_strength == 30{
-                        if base_likelihood - 0.2 > 0.0{
+                        if base_likelihood - 0.15 > 0.0{
                             base_likelihood -= 0.15;
                         }else{
                             base_likelihood = 0.0;
                         }
                     }else{
-                        if (base_likelihood - (0.50 *(1/(player.hand_strength)) as f32)) >= 0.0{
-                            base_likelihood -= (0.50 *(1/(player.hand_strength)) as f32); //This amount needs to be relative to hand strength and raise amount
+                        if (base_likelihood - (0.40 *(1/(player.hand_strength)) as f32)) >= 0.0{
+                            base_likelihood -= (0.40 *(1/(player.hand_strength)) as f32); //This amount needs to be relative to hand strength and raise amount
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -142,8 +142,8 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                     }
                 }else{
                     if player.hand_strength == 30{
-                        if base_likelihood + 0.06 <= 1.0{
-                            base_likelihood += 0.06;
+                        if base_likelihood + 0.03 <= 1.0{
+                            base_likelihood += 0.03;
                         }else{
                             base_likelihood = 1.0;
                         }
@@ -192,8 +192,8 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                     }
                 }else{
                     if player.hand_strength == 30{
-                        if base_likelihood - 0.06 >= 0.0{
-                            base_likelihood - 0.06;
+                        if base_likelihood - 0.07 >= 0.0{
+                            base_likelihood - 0.07;
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -272,8 +272,8 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                                 base_likelihood = 1.0;
                             }
                         }else{
-                            if base_likelihood + (0.0008 * player.hand_strength as f32) >= 0.0{
-                                base_likelihood += 0.0008 * player.hand_strength as f32;
+                            if base_likelihood + (0.0015 * player.hand_strength as f32) >= 0.0{
+                                base_likelihood += 0.0015 * player.hand_strength as f32;
                             }else{
                                 base_likelihood = 1.0;
                             }
