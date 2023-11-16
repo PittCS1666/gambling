@@ -55,6 +55,8 @@ pub fn load_game(
         poker_turn.small_blind_val = options_result.small_blind_amount.clone();
         poker_turn.big_blind_val = options_result.big_blind_amount.clone();
         player_num_mut.player_count = options_result.num_players.clone();
+        poker_turn.small_blind = 1;
+        poker_turn.big_blind = (poker_turn.small_blind + 1) % options_result.num_players;
     }
 
     
