@@ -3,6 +3,7 @@ use super::components::*;
 use super::cards::*; 
 use super::buttons::*;
 use super::hard_ai_logic::select_action_for_hand;
+use crate::options;
 use crate::options::components::OptionsResult;
 // use rand::Rng;
 use super::easy_ai_logic::*;
@@ -312,7 +313,7 @@ fn process_player_turn(
                 if !player.has_folded && !player.is_all_in {
                     turn_text.sections[0].value = format!("It is AI {}'s turn!\n", player.player_id);
                     if timer_query.iter().count() == 0 {
-                        commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
+                        commands.spawn(AITimer{timer: Timer::from_seconds(2.0, TimerMode::Once)});
                     }
                     else {
                         let (timer_entity, timer) = timer_query.single_mut();
@@ -674,9 +675,7 @@ pub fn turn_system(
                 cfr_data: player.cfr_data.clone(),
             });
         } 
-        spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
-        
-        //get file contents
+        spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);//get file contents
         let mut game_file = File::open("saved_game.txt").expect("Can't open file");
         let mut contents = String::new();
         game_file.read_to_string(&mut contents).expect("Cannot read from file");
@@ -690,7 +689,7 @@ pub fn turn_system(
             com_cards.push(com_card.cards);
         }
         println!("{}", to_string(&com_cards).unwrap());
-        spawn_community_cards(&mut commands, com_cards, &community_query, &sprite_data);
+        spawn_community_cards(&mut commands, vec![com_cards.into_iter().flat_map(|x| x).collect()], &community_query, &sprite_data);
 
         //update state resource
         let new_state: PokerTurn = from_str(lines[player_count.player_count + com_card_count + 2]).unwrap();
@@ -741,7 +740,7 @@ pub fn turn_system(
         PokerPhase::PreFlop => {
                 if !state.round_started {
                     if !state.is_first_round {
-                        thread::sleep(time::Duration::from_secs(5));
+                        thread::sleep(time::Duration::from_secs(2));
                     }
                     let mut game_over: bool = false;
                     if players_no_cash ==  player_count.player_count -1 {
@@ -882,9 +881,13 @@ pub fn turn_system(
         PokerPhase::Flop => {
             if community_query.iter().count() < 3 {
                 println!("Phase is now in flop!");
-                let cards = &mut deck.cards;
-                let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
+                println!("{}", deck.cards.iter().count());
+                if deck.cards.iter().count() != (49 - (player_count.player_count * 2)) {
+                    let cards = &mut deck.cards;
+                    let flop = deal_com_function(cards, &community_query);
+                    println!("{}", to_string(&flop).unwrap());
+                    spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
+                }
             }
             if !current_player_moved {
                 process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
@@ -894,9 +897,11 @@ pub fn turn_system(
         PokerPhase::Turn => {
             if community_query.iter().count() < 4 {
                 println!("Phase is now in Turn!");
-                let cards = &mut deck.cards;
-                let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
+                if deck.cards.iter().count() != (48 - (player_count.player_count * 2)) {
+                    let cards = &mut deck.cards;
+                    let turn = deal_com_function(cards, &community_query);
+                    spawn_community_cards(&mut commands, turn, &community_query, &sprite_data);
+                }
             }
             if !current_player_moved {
                 process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
@@ -906,9 +911,11 @@ pub fn turn_system(
         PokerPhase::River => {
             if community_query.iter().count() < 5 {
                 println!("Phase is now in River!");
-                let cards = &mut deck.cards;
-                let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
+                if deck.cards.iter().count() != (48 - (player_count.player_count * 2)) {
+                    let cards = &mut deck.cards;
+                    let river = deal_com_function(cards, &community_query);
+                    spawn_community_cards(&mut commands, river, &community_query, &sprite_data);
+                }
             }
             if !current_player_moved {
                 process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);

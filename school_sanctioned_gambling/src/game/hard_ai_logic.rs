@@ -3,19 +3,6 @@ use bevy::prelude::*;
 use super::components::*;
 use rand::Rng;
 
-
-// Different values for each hand, these are used as for each hand you will want to have a different probability for different actions
-const HIGH_CARD: usize = 0;
-const ONE_PAIR: usize = 1;
-const TWO_PAIR: usize = 2;
-const THREE_OF_A_KIND: usize = 3;
-const STRAIGHT: usize = 4;
-const FLUSH: usize = 5;
-const FULL_HOUSE: usize = 6;
-const FOUR_OF_A_KIND: usize = 7;
-const STRAIGHT_FLUSH: usize = 8;
-const ROYAL_FLUSH: usize = 9;
-
 impl CfrData {
     pub fn new() -> CfrData {
         let mut actions = vec!["Fold".to_string(), "Call".to_string(), "Raise".to_string(), "Check".to_string()];
@@ -193,7 +180,7 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.07 >= 0.0{
-                            base_likelihood - 0.07;
+                            base_likelihood -= 0.07;
                         }else{
                             base_likelihood = 0.0;
                         }
