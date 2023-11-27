@@ -345,7 +345,20 @@ fn process_player_turn(
                         }
                     }
                 } else {
-                    state.current_player = (current_player + 1) % player_count.player_count;
+                    if player_count.player_count > 3 {
+                        if state.current_player == 2 {
+                            state.current_player = 0
+                        }
+                        else if state.current_player == player_count.player_count - 1 {
+                            state.current_player == 1;
+                        }
+                        else {
+                            state.current_player = (current_player + 1) % player_count.player_count;
+                        }
+                    }
+                    else {
+                        state.current_player = (current_player + 1) % player_count.player_count;
+                    }
                     player.has_moved = true;
                 }
             } else {
@@ -365,7 +378,12 @@ fn process_player_turn(
                         break;
                     }
                 } else {
-                    state.current_player = (state.current_player + 1) % player_count.player_count;
+                    if player_count.player_count > 3{
+                        state.current_player = 3;
+                    }
+                    else {
+                        state.current_player = (current_player + 1) % player_count.player_count;
+                    }
                     player.has_moved = true;
                 }
             }
@@ -414,7 +432,25 @@ pub fn check_action (
         println!("Player {} has checked!", player.player_id);
         player.has_moved = true;
         last_action.action = Some(PlayerAction::None);
-        state.current_player = (state.current_player + 1) % player_count.player_count;
+        //state.current_player = (state.current_player + 1) % player_count.player_count;
+        
+        if player_count.player_count > 3 {
+            if state.current_player == 2 {
+                state.current_player = 0;
+            }
+            else if state.current_player == 0 {
+                state.current_player = 3;
+            }
+            else if state.current_player = (player_count.player_count - 1) {
+                state.current_player = 1;
+            }
+            else {
+                state.current_player = (state.current_player + 1) % player_count.player_count;
+            }
+        }
+        else {
+            state.current_player = (state.current_player + 1) % player_count.player_count;
+        }
     }
 }
 
@@ -463,7 +499,16 @@ pub fn raise_action (
         }
         
         last_action.action = Some(PlayerAction::None);
-        state.current_player = (state.current_player + 1) % player_count.player_count;
+        //state.current_player = (state.current_player + 1) % player_count.player_count;
+        if player_count.player_count > 3 && state.current_player == 2 {
+            state.current_player = 0;
+        }
+        else if player_count.player_count > 3 && state.current_player == 0 {
+            state.current_player = 3;
+        }
+        else {
+            state.current_player = (state.current_player + 1) % player_count.player_count;
+        }
         return true;
     } else {
         if player.player_id == 0 {
@@ -500,7 +545,16 @@ pub fn fold_action(
     if player.player_id == 0 {
         last_action.action = Some(PlayerAction::None);
     }
-    state.current_player = (state.current_player + 1) % player_count.player_count;
+    //state.current_player = (state.current_player + 1) % player_count.player_count;
+    if player_count.player_count > 3 && state.current_player == 2 {
+        state.current_player = 0;
+    }
+    else if player_count.player_count > 3 && state.current_player == 0 {
+        state.current_player = 3;
+    }
+    else {
+        state.current_player = (state.current_player + 1) % player_count.player_count;
+    }
 }
 
 pub fn call_action(
@@ -543,7 +597,16 @@ pub fn call_action(
             println!("Player {} has gone all in!", player.player_id);
         }
         player.current_bet = state.current_top_bet;
-        state.current_player = (state.current_player + 1) % player_count.player_count;
+        //state.current_player = (state.current_player + 1) % player_count.player_count;
+        if player_count.player_count > 3 && state.current_player == 2 {
+            state.current_player = 0;
+        }
+        else if player_count.player_count > 3 && state.current_player == 0 {
+            state.current_player = 3;
+        }
+        else {
+            state.current_player = (state.current_player + 1) % player_count.player_count;
+        }
     } else {
         if player.player_id == 0 {
             turn_text.sections[1].value = format!("You have gone all in!");
@@ -560,7 +623,17 @@ pub fn call_action(
         state.pot += player.cash;
         player.current_bet = player.cash + player.current_bet;
         player.cash = 0;
-        state.current_player = (state.current_player + 1) % player_count.player_count;
+        //state.current_player = (state.current_player + 1) % player_count.player_count;
+        if player_count.player_count > 3 && state.current_player == 2 {
+            state.current_player = 0;
+        }
+        else if player_count.player_count > 3 && state.current_player == 0 {
+            state.current_player = 3;
+        }
+        else {
+            state.current_player = (state.current_player + 1) % player_count.player_count;
+        }
+
         if player.player_id == 0 {
             money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
             money_text.sections[1].value = format!("Your Current Bet: ${}\n", player.current_bet);
@@ -871,7 +944,16 @@ pub fn turn_system(
                         state.round_started = true;
                         println!("Pot is: {}", state.pot);
                     }
-                    state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    //state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    if player_count.player_count > 3 && state.big_blind == 2 {
+                        state.current_player = 0;
+                    }
+                    else if player_count.player_count > 3 && state.big_blind == 0 {
+                        state.current_player = 3;
+                    }
+                    else {
+                        state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    }
                 }
 
             if !current_player_moved {
@@ -971,7 +1053,15 @@ pub fn turn_system(
             state.current_top_bet = 0;
             state.small_blind = (state.small_blind + 1) % player_count.player_count;
             state.big_blind = (state.big_blind + 1) % player_count.player_count;
-            state.current_player = state.big_blind + 1 % player_count.player_count;
+            if player_count.player_count > 3 && state.big_blind == 2 {
+                state.current_player = 0;
+            }
+            else if player_count.player_count > 3 && state.big_blind == 0 {
+                state.current_player = 3;
+            }
+            else {
+                state.current_player = (state.big_blind + 1) % player_count.player_count;
+            }
 
             money_text.sections[2].value = format!("Current Pot: ${}\n", 0);
             money_text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
@@ -1053,7 +1143,15 @@ fn next_player_turn(
         text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
         text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
 
-        state.current_player = (state.big_blind + 1) % _total_players;
+        if _total_players > 3 && state.big_blind == 2 {
+            state.current_player = 0;
+        }
+        else if _total_players > 3 && state.big_blind == 0 {
+            state.current_player = 3;
+        }
+        else {
+            state.current_player = (state.big_blind + 1) % _total_players;
+        }
     }
 }
 
