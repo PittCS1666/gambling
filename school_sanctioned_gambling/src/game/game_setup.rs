@@ -441,7 +441,7 @@ pub fn check_action (
             else if state.current_player == 0 {
                 state.current_player = 3;
             }
-            else if state.current_player = (player_count.player_count - 1) {
+            else if state.current_player == (player_count.player_count - 1) {
                 state.current_player = 1;
             }
             else {
@@ -500,11 +500,19 @@ pub fn raise_action (
         
         last_action.action = Some(PlayerAction::None);
         //state.current_player = (state.current_player + 1) % player_count.player_count;
-        if player_count.player_count > 3 && state.current_player == 2 {
-            state.current_player = 0;
-        }
-        else if player_count.player_count > 3 && state.current_player == 0 {
-            state.current_player = 3;
+        if player_count.player_count > 3 {
+            if state.current_player == 2 {
+                state.current_player = 0;
+            }
+            else if state.current_player == 0 {
+                state.current_player = 3;
+            }
+            else if state.current_player == (player_count.player_count - 1) {
+                state.current_player = 1;
+            }
+            else {
+                state.current_player = (state.current_player + 1) % player_count.player_count;
+            }
         }
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
@@ -546,11 +554,19 @@ pub fn fold_action(
         last_action.action = Some(PlayerAction::None);
     }
     //state.current_player = (state.current_player + 1) % player_count.player_count;
-    if player_count.player_count > 3 && state.current_player == 2 {
-        state.current_player = 0;
-    }
-    else if player_count.player_count > 3 && state.current_player == 0 {
-        state.current_player = 3;
+    if player_count.player_count > 3 {
+        if state.current_player == 2 {
+            state.current_player = 0;
+        }
+        else if state.current_player == 0 {
+            state.current_player = 3;
+        }
+        else if state.current_player == (player_count.player_count - 1) {
+            state.current_player = 1;
+        }
+        else {
+            state.current_player = (state.current_player + 1) % player_count.player_count;
+        }
     }
     else {
         state.current_player = (state.current_player + 1) % player_count.player_count;
@@ -582,6 +598,7 @@ pub fn call_action(
         }
         state.pot += state.current_top_bet - player.current_bet;
         player.cash -= state.current_top_bet - player.current_bet;
+        player.current_bet = state.current_top_bet;
         if player.player_id == 0 {
             money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
             money_text.sections[1].value = format!("Your Current Bet: ${}\n", player.current_bet);
@@ -596,13 +613,21 @@ pub fn call_action(
             }
             println!("Player {} has gone all in!", player.player_id);
         }
-        player.current_bet = state.current_top_bet;
+        //player.current_bet = state.current_top_bet;
         //state.current_player = (state.current_player + 1) % player_count.player_count;
-        if player_count.player_count > 3 && state.current_player == 2 {
-            state.current_player = 0;
-        }
-        else if player_count.player_count > 3 && state.current_player == 0 {
-            state.current_player = 3;
+        if player_count.player_count > 3 {
+            if state.current_player == 2 {
+                state.current_player = 0;
+            }
+            else if state.current_player == 0 {
+                state.current_player = 3;
+            }
+            else if state.current_player == (player_count.player_count - 1) {
+                state.current_player = 1;
+            }
+            else {
+                state.current_player = (state.current_player + 1) % player_count.player_count;
+            }
         }
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
@@ -624,11 +649,19 @@ pub fn call_action(
         player.current_bet = player.cash + player.current_bet;
         player.cash = 0;
         //state.current_player = (state.current_player + 1) % player_count.player_count;
-        if player_count.player_count > 3 && state.current_player == 2 {
-            state.current_player = 0;
-        }
-        else if player_count.player_count > 3 && state.current_player == 0 {
-            state.current_player = 3;
+        if player_count.player_count > 3 {
+            if state.current_player == 2 {
+                state.current_player = 0;
+            }
+            else if state.current_player == 0 {
+                state.current_player = 3;
+            }
+            else if state.current_player == (player_count.player_count - 1) {
+                state.current_player = 1;
+            }
+            else {
+                state.current_player = (state.current_player + 1) % player_count.player_count;
+            }
         }
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
@@ -945,11 +978,19 @@ pub fn turn_system(
                         println!("Pot is: {}", state.pot);
                     }
                     //state.current_player = (state.big_blind + 1) % player_count.player_count;
-                    if player_count.player_count > 3 && state.big_blind == 2 {
-                        state.current_player = 0;
-                    }
-                    else if player_count.player_count > 3 && state.big_blind == 0 {
-                        state.current_player = 3;
+                    if player_count.player_count > 3 {
+                        if state.big_blind == 2 {
+                            state.current_player = 0;
+                        }
+                        else if state.big_blind == 0 {
+                            state.current_player = 3;
+                        }
+                        else if state.big_blind == (player_count.player_count - 1) {
+                            state.current_player = 1;
+                        }
+                        else {
+                            state.current_player = (state.big_blind + 1) % player_count.player_count;
+                        }
                     }
                     else {
                         state.current_player = (state.big_blind + 1) % player_count.player_count;
@@ -1051,17 +1092,53 @@ pub fn turn_system(
 
             state.pot = 0;
             state.current_top_bet = 0;
-            state.small_blind = (state.small_blind + 1) % player_count.player_count;
-            state.big_blind = (state.big_blind + 1) % player_count.player_count;
-            if player_count.player_count > 3 && state.big_blind == 2 {
-                state.current_player = 0;
-            }
-            else if player_count.player_count > 3 && state.big_blind == 0 {
-                state.current_player = 3;
+            if player_count.player_count > 3 {
+                if state.small_blind == 2 {
+                    state.small_blind = 0;
+                }
+                else if state.small_blind == 0 {
+                    state.small_blind = 3;
+                }
+                else if state.small_blind == (player_count.player_count - 1) {
+                    state.small_blind = 1;
+                }
+                else {
+                    state.small_blind = (state.small_blind + 1) % player_count.player_count;
+                }
+
+                if state.big_blind == 2 {
+                    state.big_blind = 0;
+                }
+                else if state.big_blind == 0 {
+                    state.big_blind = 3;
+                }
+                else if state.big_blind == (player_count.player_count - 1) {
+                    state.big_blind = 1;
+                }
+                else {
+                    state.big_blind = (state.big_blind + 1) % player_count.player_count;
+                }
+
+                if state.big_blind == 2 {
+                    state.current_player = 0;
+                }
+                else if state.big_blind == 0 {
+                    state.current_player = 3;
+                }
+                else if state.big_blind == (player_count.player_count - 1) {
+                    state.current_player = 1;
+                }
+                else {
+                    state.current_player = (state.big_blind + 1) % player_count.player_count;
+                }
+
             }
             else {
+                state.small_blind = (state.small_blind + 1) % player_count.player_count;
+                state.big_blind = (state.big_blind + 1) % player_count.player_count;
                 state.current_player = (state.big_blind + 1) % player_count.player_count;
             }
+
 
             money_text.sections[2].value = format!("Current Pot: ${}\n", 0);
             money_text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
@@ -1142,16 +1219,7 @@ fn next_player_turn(
         }
         text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
         text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
-
-        if _total_players > 3 && state.big_blind == 2 {
-            state.current_player = 0;
-        }
-        else if _total_players > 3 && state.big_blind == 0 {
-            state.current_player = 3;
-        }
-        else {
-            state.current_player = (state.big_blind + 1) % _total_players;
-        }
+        state.current_player = state.small_blind;
     }
 }
 
