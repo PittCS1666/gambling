@@ -349,8 +349,8 @@ fn process_player_turn(
                         if state.current_player == 2 {
                             state.current_player = 0
                         }
-                        else if state.current_player == player_count.player_count - 1 {
-                            state.current_player == 1;
+                        else if state.current_player == (player_count.player_count - 1) {
+                            state.current_player = 1;
                         }
                         else {
                             state.current_player = (current_player + 1) % player_count.player_count;
@@ -360,6 +360,7 @@ fn process_player_turn(
                         state.current_player = (current_player + 1) % player_count.player_count;
                     }
                     player.has_moved = true;
+                    //println!("1 Current player is now: {}", state.current_player);
                 }
             } else {
                 if !player.has_folded && !player.is_all_in {
@@ -384,6 +385,7 @@ fn process_player_turn(
                     else {
                         state.current_player = (current_player + 1) % player_count.player_count;
                     }
+                    //println!("2 Current player is now: {}", state.current_player);
                     player.has_moved = true;
                 }
             }
@@ -451,6 +453,7 @@ pub fn check_action (
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
         }
+        //println!("3 Current player is now: {}", state.current_player);
     }
 }
 
@@ -517,6 +520,7 @@ pub fn raise_action (
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
         }
+        //println!("4 Current player is now: {}", state.current_player);
         return true;
     } else {
         if player.player_id == 0 {
@@ -571,6 +575,7 @@ pub fn fold_action(
     else {
         state.current_player = (state.current_player + 1) % player_count.player_count;
     }
+    //println!("5 Current player is now: {}", state.current_player);
 }
 
 pub fn call_action(
@@ -632,6 +637,7 @@ pub fn call_action(
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
         }
+        //println!("6 Current player is now: {}", state.current_player);
     } else {
         if player.player_id == 0 {
             turn_text.sections[1].value = format!("You have gone all in!");
@@ -666,6 +672,7 @@ pub fn call_action(
         else {
             state.current_player = (state.current_player + 1) % player_count.player_count;
         }
+        //println!("7 Current player is now: {}", state.current_player);
 
         if player.player_id == 0 {
             money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
@@ -847,7 +854,7 @@ pub fn turn_system(
         PokerPhase::PreFlop => {
                 if !state.round_started {
                     if !state.is_first_round {
-                        thread::sleep(time::Duration::from_secs(5));
+                        thread::sleep(time::Duration::from_secs(2));
                     }
                     let mut game_over: bool = false;
                     if players_no_cash ==  player_count.player_count -1 {
@@ -995,6 +1002,7 @@ pub fn turn_system(
                     else {
                         state.current_player = (state.big_blind + 1) % player_count.player_count;
                     }
+                    //println!("8 Current player is now: {}", state.current_player);
                 }
 
             if !current_player_moved {
@@ -1138,7 +1146,7 @@ pub fn turn_system(
                 state.big_blind = (state.big_blind + 1) % player_count.player_count;
                 state.current_player = (state.big_blind + 1) % player_count.player_count;
             }
-
+            //println!("9 Current player is now: {}", state.current_player);
 
             money_text.sections[2].value = format!("Current Pot: ${}\n", 0);
             money_text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
@@ -1225,6 +1233,7 @@ fn next_player_turn(
         else {
             state.current_player = state.small_blind;
         }
+        //println!("10 Current player is now: {}", state.current_player);
     }
 }
 
