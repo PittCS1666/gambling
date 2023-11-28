@@ -13,6 +13,7 @@ pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
         big_blind_amount: 50,
         num_players: 2,
         is_loaded_game: false,
+        ai_type: 0,
     }; // these are gonna be the defaults I guess
     commands.insert_resource(results);
 }
@@ -126,6 +127,74 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     });
                 counter += 1;
             }
+
+            parent
+            .spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            })
+            .with_children(|parent| {
+                // AI Difficulty Title
+                parent.spawn(TextBundle::from_section(
+                    "AI Difficulty",
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 30.0,
+                        color: Color::BLACK,
+                    },
+                ));
+
+                // Easy AI Button
+                parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Easy",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(EasyAiButton);
+
+                // Hard AI Button
+                parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Hard",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(HardAiButton);
+                });
 
             // spawn local game button
             parent
@@ -271,6 +340,7 @@ pub fn play_button_interaction(
                     results.big_blind_amount = results_clone.big_blind_amount;
                     results.money_per_player = results_clone.money_per_player;
                     results.num_players = results_clone.num_players;
+                    results.ai_type = results_clone.ai_type;
                 } else {
                     // progress to next screen with given options
                     app_state_next_state.set(AppState::LocalPlay);
@@ -288,14 +358,64 @@ pub fn play_button_interaction(
     }
 }
 
+pub fn easy_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<EasyAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Easy {
+            ai_button_state.selected = AiSelection::Easy;
+            results.ai_type = 0;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Easy });
+        }
+    }
+}
+
+pub fn hard_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<HardAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Hard {
+            ai_button_state.selected = AiSelection::Hard;
+            results.ai_type = 1;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Hard });
+        }
+    }
+}
+
+pub fn update_button_colors(
+    mut button_query: Query<(
+        Entity, 
+        &mut BackgroundColor, 
+        Option<&EasyAiButton>, 
+        Option<&HardAiButton>
+    )>,
+    ai_button_state: Res<AiButtonState>,
+) {
+    for (_entity, mut background_color, easy_button, hard_button) in button_query.iter_mut() {
+        if easy_button.is_some() && ai_button_state.selected == AiSelection::Easy {
+            *background_color = Color::RED.into();
+        } else if hard_button.is_some() && ai_button_state.selected == AiSelection::Hard {
+            *background_color = Color::RED.into();
+        } else {
+            // If the entity is one of the buttons, but not currently selected
+            if easy_button.is_some() || hard_button.is_some() {
+                *background_color = Color::rgb(0.071, 0.141, 0.753).into();
+            }
+        }
+    }
+}
+
 pub fn load_button_interaction(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<LoadButton>),
     >,
-    mut text_query: Query<&mut Text, With<TextBoxTag>>,
-    text_ent_query: Query<(Entity, &TextBox)>,
-    children_query: Query<&Children>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     mut results: ResMut<OptionsResult>,
 ) {
