@@ -339,19 +339,31 @@ fn process_player_turn(
                                 state.current_top_bet += 50;
                                 println!("Current top bet is now: ${}", state.current_top_bet);
                                 player_raised = raise_action(state, &mut player, player_count, &mut last_action, &mut text_query);
-                                hard_ai_update(state, player, player_count, hand_category, 2 as usize);
+                                
+                                if player.ai_type == 1 {
+                                    hard_ai_update(state, player, player_count, hand_category, 2 as usize);
+                                }
                             }
                             else if player_move.eq("Call") {
                                 call_action(state, &mut player, player_count, &mut last_action, &mut text_query);
-                                hard_ai_update(state, player, player_count, hand_category, 1 as usize);
+                                if player.ai_type == 1 {
+                                    hard_ai_update(state, player, player_count, hand_category, 1 as usize);
+                                }
                             }
                             else if player_move.eq("Fold") {
                                 fold_action(state, &mut player, player_count, &mut last_action, &mut text_query);
-                                hard_ai_update(state, player, player_count, hand_category, 0 as usize);
+
+                                if player.ai_type == 1 {
+                                    hard_ai_update(state, player, player_count, hand_category, 0 as usize);
+                                }
                             }
                             else {
                                 check_action(state, &mut player, player_count, &mut last_action, &mut text_query);
-                                hard_ai_update(state, player, player_count, hand_category, 3 as usize);
+
+                                if player.ai_type == 1 {
+                                    hard_ai_update(state, player, player_count, hand_category, 3 as usize);
+                                }
+                                
                             }
                             commands.entity(timer_entity).despawn_recursive();
                         }
