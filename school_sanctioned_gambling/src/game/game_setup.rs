@@ -1219,7 +1219,12 @@ fn next_player_turn(
         }
         text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
         text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
-        state.current_player = state.small_blind;
+        if(_total_players == 2) {
+            state.current_player = state.big_blind;
+        }
+        else {
+            state.current_player = state.small_blind;
+        }
     }
 }
 
