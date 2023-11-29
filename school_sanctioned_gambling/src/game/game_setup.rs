@@ -26,6 +26,7 @@ pub fn load_game(
     mut player_num_mut: ResMut<NumPlayers>,
     mut poker_turn: ResMut<PokerTurn>,
     options_result: Res<OptionsResult>,
+    mut deck: ResMut<Deck>,
 ) {
     let mut player_money = options_result.money_per_player;
     let mut player_bet = 0;
@@ -54,6 +55,7 @@ pub fn load_game(
         
     }
     else {
+        deck.cards = init_cards();
         poker_turn.small_blind_val = options_result.small_blind_amount.clone();
         poker_turn.big_blind_val = options_result.big_blind_amount.clone();
         player_num_mut.player_count = options_result.num_players.clone();
@@ -1055,9 +1057,9 @@ pub fn turn_system(
                                 }
                             }
                         }
-                        state.round_started = true;
                         println!("Pot is: {}", state.pot);
                     }
+                    state.round_started = true;
                     //state.current_player = (state.big_blind + 1) % player_count.player_count;
                     if player_count.player_count > 3 {
                         if state.big_blind == 2 {
