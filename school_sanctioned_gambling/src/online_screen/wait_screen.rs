@@ -39,6 +39,7 @@ fn read_leaderboard() -> io::Result<Vec<LeaderboardEntry>>
 
     // Last step is to sort based on "score" member variable
     leaderboard.sort_by(|a: &LeaderboardEntry, b: &LeaderboardEntry| a.score.cmp(&b.score));
+    leaderboard.reverse();
 
     Ok(leaderboard)
 }
