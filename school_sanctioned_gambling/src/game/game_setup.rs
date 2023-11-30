@@ -949,11 +949,14 @@ pub fn turn_system(
                         game_over = true;
                     }
 
-                    println!("Phase is now in PreFlop!");
-                    let cards = &mut deck.cards;
-                    shuffle_cards(cards);
-                    let players_hands = deal_hands(player_count.player_count, cards, &options_result);
-                    spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data, &options_result);
+                    if deck.cards.iter().count() == 52 {
+                        println!("Phase is now in PreFlop!");
+                        let cards = &mut deck.cards;
+                        shuffle_cards(cards);
+                        let players_hands = deal_hands(player_count.player_count, cards, &options_result);
+                        spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data, &options_result);
+                    }
+                    
 
                     //loops through the players to find the big and small blinds
                     if player_entity_query.iter().count() > 0 && !game_over {
@@ -1058,8 +1061,9 @@ pub fn turn_system(
                             }
                         }
                         println!("Pot is: {}", state.pot);
+                        state.round_started = true;
                     }
-                    state.round_started = true;
+                    //state.round_started = true;
                     //state.current_player = (state.big_blind + 1) % player_count.player_count;
                     if player_count.player_count > 3 {
                         if state.big_blind == 2 {
@@ -1119,7 +1123,8 @@ pub fn turn_system(
         PokerPhase::River => {
             if community_query.iter().count() < 5 {
                 println!("Phase is now in River!");
-                if deck.cards.iter().count() != (48 - (player_count.player_count * 2)) {
+                if deck.cards.iter().count() != (47 - (player_count.player_count * 2)) {
+                    println!("Hello!");
                     let cards = &mut deck.cards;
                     let river = deal_com_function(cards, &community_query);
                     spawn_community_cards(&mut commands, river, &community_query, &sprite_data);
@@ -1260,6 +1265,7 @@ pub fn turn_system(
                 player.is_all_in = false;
                 player.has_raised = false;
                 player.small_blind = false;
+                player.big_blind = false;
             }
             state.round_started = false;
             state.phase = PokerPhase::PreFlop;
