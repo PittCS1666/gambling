@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, Mutex, RwLock};
+use tokio::sync::{mpsc, RwLock};
 
 use crate::AppState;
 
@@ -14,6 +14,14 @@ pub struct GameInteraction {
     pub code: String,
     /// this is your name
     pub name: String,
+}
+
+#[derive(Resource)]
+pub struct UserOperater{
+    /// when ui get message,it will call send_message function
+    pub send_message: mpsc::Sender<Message>,
+    /// when recever message
+    pub recv_message:mpsc::Receiver<Message>,
 }
 impl Default for GameInteraction {
     fn default() -> Self {
@@ -36,6 +44,17 @@ pub enum Message {
     Close,
     Join(UserInfo),
     BeKick,
+
+    /// player will action
+    Action,
+
+    /// player action type
+    Raise(u64),
+    Call,
+    Fold,
+    Check,
+        
+    Reset,
 }
 
 #[derive(Resource)]

@@ -2,7 +2,6 @@ use super::cards::*;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 
 #[derive(Component)]
 pub struct Background;
@@ -55,14 +54,14 @@ pub struct Player {
     pub big_blind: bool,
     pub small_blind: bool,
     pub cfr_data: HashMap<usize, CfrData>,
-    pub ai_type: usize,
 }
 
 // Data to store all cfr_data necessary for Hard AI
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CfrData {
-    pub strategy: HashMap<String, f32>,
-    pub regret_sum: HashMap<String, f32>,
+    pub strategy: HashMap<String, f64>,
+    pub cumulative_strategy: HashMap<String, f64>,
+    pub regret_sum: HashMap<String, f64>,
 }
 
 #[derive(Component, Serialize, Deserialize)]
@@ -98,7 +97,6 @@ pub struct PokerTurn {
     pub small_blind_val: usize,
     pub big_blind_val: usize,
     pub is_first_round: bool,
-    pub all_last_move: Vec<String>,
 }
 impl Resource for PokerTurn {}
 
@@ -119,34 +117,13 @@ pub struct LastPlayerAction {
 }
 impl Resource for LastPlayerAction {}
 
-impl fmt::Display for LastPlayerAction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match &self.action {
-            Some(action) => write!(f, "{}", action),
-            None => write!(f, "No action"),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug)]
 pub enum PlayerAction {
     Raise,
     Check,
     Fold,
     Call,
     None,
-}
-
-impl fmt::Display for PlayerAction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            PlayerAction::Raise => write!(f, "Raise"),
-            PlayerAction::Check => write!(f, "Check"),
-            PlayerAction::Fold => write!(f, "Fold"),
-            PlayerAction::Call => write!(f, "Call"),
-            PlayerAction::None => write!(f, "None"),
-        }
-    }
 }
 
 #[derive(Component, Default, Debug)]

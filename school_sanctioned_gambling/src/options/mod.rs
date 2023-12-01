@@ -4,16 +4,12 @@ use bevy::prelude::*;
 mod systems;
 use systems::*;
 pub mod components;
-use components::*;
 
 pub struct OptionsPlugin;
 
 impl Plugin for OptionsPlugin {
     fn build(&self, app: &mut App) {
-        app
-        .insert_resource(AiButtonState::default())
-        .add_event::<ButtonPressEvent>()
-        .add_systems(OnEnter(AppState::Options), load_options)
+        app.add_systems(OnEnter(AppState::Options), load_options)
             .add_systems(OnExit(AppState::Options), tear_down_options)
             .add_systems(
                 Update,
@@ -25,9 +21,6 @@ impl Plugin for OptionsPlugin {
             .add_systems(
                 Update,
                 load_button_interaction.run_if(in_state(AppState::Options)),
-            )
-            .add_systems(Update, easy_button_interaction.run_if(in_state(AppState::Options)))
-            .add_systems(Update, hard_button_interaction.run_if(in_state(AppState::Options)))
-            .add_systems(Update, update_button_colors.run_if(in_state(AppState::Options)));
+            );
     }
 }

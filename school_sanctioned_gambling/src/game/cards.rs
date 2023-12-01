@@ -7,7 +7,6 @@ use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 // use super::hard_ai_logic::*;
 use std::collections::HashMap;
-use crate::options::components::OptionsResult;
 
 #[derive(Serialize, Deserialize)]
 pub struct Deck {
@@ -52,7 +51,13 @@ impl Card {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn copy(card: &Card) -> Card {
+        let new_card = Card::new(card._card_id, card.suit, card.value);
+        return new_card;
+    }
+}
+impl ToString for Card{
+    fn to_string(&self)->String{
         let card_value = if self.value < 11 && self.value > 1 {
             let card_value_str = self.value.to_string();
             card_value_str
@@ -81,11 +86,6 @@ impl Card {
                 }
             }
         ))
-    }
-
-    pub fn copy(card: &Card) -> Card {
-        let new_card = Card::new(card._card_id, card.suit, card.value);
-        return new_card;
     }
 }
 
@@ -120,7 +120,7 @@ pub fn load_assets(
     });
 }
 
-pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, options_result: &ResMut<OptionsResult>) -> Vec<Player> {
+pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usize) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
 
     for player_id in 0..player_count {
@@ -134,7 +134,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, options_result: &R
         result.push(Player {
             player_id,
             cards: hand.clone(),
-            cash: options_result.money_per_player,
+            cash: starting_cash,
             current_bet: 0,
             has_folded: false,
             has_moved: false,
@@ -145,32 +145,36 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, options_result: &R
             big_blind: false,
             small_blind: false,
             cfr_data,
-            ai_type: options_result.ai_type,
         });
     }
     result
 }
 
+#[allow(clippy::if_same_then_else)]
 pub fn deal_com_function(
     cards: &mut Vec<Card>,
     community_query: &Query<&CommunityCards>,
 ) -> Vec<Vec<Card>> {
     let mut result: Vec<Vec<Card>> = Vec::with_capacity(5);
     // Dealing of Flop, Turn, and River
-    if community_query.iter().count() == 0 {
-        let flop: Vec<Card> = cards.drain(0..3).collect();
-        result.push(flop);
-    } else if community_query.iter().count() == 3 {
-        let turn = cards.drain(0..1).collect();
-        result.push(turn)
-    } else if community_query.iter().count() == 4 {
-        let river = cards.drain(0..1).collect();
-        result.push(river)
-    }
+    let temp=match community_query.iter().count(){
+        0=>{
+            // return flop
+            cards.drain(0..3).collect::<Vec<Card>>()
+        }
+        3..=4=>{
+            // return turn,river
+            cards.drain(0..1).collect::<Vec<Card>>()
+        }
+        _=>{
+            unimplemented!()
+        }
+    };
+    result.push(temp);
     result
 }
 
-pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Player>) -> usize {
+pub fn card_function(community_query: &Query<&CommunityCards>, players: &[&Player]) -> usize {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query
         .iter()
@@ -199,11 +203,11 @@ pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Pl
 
     let comparison = compare_hands(&mut hand1, &mut hand2);
     if comparison == 1 {
-        return 0;
+        0
     } else if comparison == 2 {
-        return 1;
+        1
     } else {
-        return 2;
+        2
     }
 }
 
@@ -212,7 +216,6 @@ pub fn spawn_player_cards(
     players: &Vec<Player>,
     query: &mut Query<(Entity, &mut Player)>,
     sprite_data: &Res<SpriteData>,
-    options_result: &ResMut<OptionsResult>,
 ) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
@@ -243,7 +246,6 @@ pub fn spawn_player_cards(
                 big_blind: false,
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
-                ai_type: options_result.ai_type,
             });
         }
 
@@ -293,7 +295,7 @@ pub fn spawn_community_cards(
                     ..default()
                 })
                 .insert(CommunityCards {
-                    cards: vec![card.clone()],
+                    cards: vec![*card],
                 });
         }
     }

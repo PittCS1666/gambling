@@ -1,4 +1,4 @@
-use super::{AppState, GameInteraction, UserInfo, Users};
+use super::{AppState, UserInfo, Users};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
 
