@@ -216,6 +216,7 @@ pub fn save_buton_interaction(
                     small_blind_val: state.small_blind_val,
                     big_blind_val: state.big_blind_val,
                     is_first_round: state.is_first_round,
+                    all_last_move: state.all_last_move.clone(),
                 };
 
                 let state_to_save = to_string(&cur_state).unwrap();
@@ -300,7 +301,6 @@ pub fn raise_button_interaction(
                             if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
                                 if parsed_value > 0 {
                                     state.current_top_bet += parsed_value;
-                                    println!("Current top bet is now: ${}", state.current_top_bet);
                                     last_action.action = Some(PlayerAction::Raise);
                                 } else {
                                     println!("Have to raise by more than 0!");

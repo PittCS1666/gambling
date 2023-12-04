@@ -7,6 +7,7 @@ use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 // use super::hard_ai_logic::*;
 use std::collections::HashMap;
+use crate::options::components::OptionsResult;
 
 #[derive(Serialize, Deserialize)]
 pub struct Deck {
@@ -119,7 +120,7 @@ pub fn load_assets(
     });
 }
 
-pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usize) -> Vec<Player> {
+pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, options_result: &ResMut<OptionsResult>) -> Vec<Player> {
     let mut result: Vec<Player> = Vec::with_capacity(player_count as usize);
 
     for player_id in 0..player_count {
@@ -133,7 +134,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
         result.push(Player {
             player_id,
             cards: hand.clone(),
-            cash: starting_cash,
+            cash: options_result.money_per_player,
             current_bet: 0,
             has_folded: false,
             has_moved: false,
@@ -144,6 +145,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
             big_blind: false,
             small_blind: false,
             cfr_data,
+            ai_type: options_result.ai_type,
         });
     }
     result
@@ -210,6 +212,7 @@ pub fn spawn_player_cards(
     players: &Vec<Player>,
     query: &mut Query<(Entity, &mut Player)>,
     sprite_data: &Res<SpriteData>,
+    options_result: &ResMut<OptionsResult>,
 ) {
     // If players don't exist create the entity, if they do just update their cards they hold
     for player in players {
@@ -240,6 +243,7 @@ pub fn spawn_player_cards(
                 big_blind: false,
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
+                ai_type: options_result.ai_type,
             });
         }
 

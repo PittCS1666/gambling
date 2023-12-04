@@ -3,45 +3,29 @@ use bevy::prelude::*;
 use super::components::*;
 use rand::Rng;
 
-
-// Different values for each hand, these are used as for each hand you will want to have a different probability for different actions
-const HIGH_CARD: usize = 0;
-const ONE_PAIR: usize = 1;
-const TWO_PAIR: usize = 2;
-const THREE_OF_A_KIND: usize = 3;
-const STRAIGHT: usize = 4;
-const FLUSH: usize = 5;
-const FULL_HOUSE: usize = 6;
-const FOUR_OF_A_KIND: usize = 7;
-const STRAIGHT_FLUSH: usize = 8;
-const ROYAL_FLUSH: usize = 9;
-
 impl CfrData {
     pub fn new() -> CfrData {
         let mut actions = vec!["Fold".to_string(), "Call".to_string(), "Raise".to_string(), "Check".to_string()];
         let mut strategy = HashMap::new();
-        let mut cumulative_strategy = HashMap::new();
         let mut regret_sum = HashMap::new();
 
-        let initial_probability = 1.0 / actions.len() as f64;
+        let initial_probability = 1.0 / actions.len() as f32;
 
         
         for action in actions {
-            strategy.insert(action.clone(), initial_probability); //For each action, assign a probability of taking that action
-            cumulative_strategy.insert(action.clone(), 0.0);
-            regret_sum.insert(action.clone(), 0.0); //I think this stores our regret for each action
+            strategy.insert(action.clone(), initial_probability);
+            regret_sum.insert(action.clone(), 0.0);
         }
 
         CfrData {
             strategy,
-            cumulative_strategy,
             regret_sum,
         }
     }
 }
 
 //Parameters: game phase, other player moves
-pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase, other_players:Vec<String>, player_count: usize, prev_likelihood: f32) -> f32{
+pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase, other_players:Vec<String>, player_count: usize, prev_likelihood: f32) -> f32{
     let mut base_likelihood = prev_likelihood;
     //Increase/Decrease win likelihood depending on hand strength and round
     if game_phase == PokerPhase::PreFlop{
@@ -110,11 +94,11 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
     }else if action == PlayerAction::Raise{
         for other_action in other_players{
             if other_action == "Fold"{
-                base_likelihood += ((1/player_count-1) as f32 - (1/(player_count)) as f32)
+                base_likelihood += ((1/(player_count-1)) as f32 - (1/(player_count)) as f32)
             }else if other_action == "Raise"{
                 if game_phase == PokerPhase::PreFlop{
-                    if base_likelihood - (0.45 *(1/(player.hand_strength)) as f32) >= 0.0{
-                        base_likelihood -= (0.45 *(1/(player.hand_strength)) as f32); //This amount needs to be relative to hand strength and raise amount
+                    if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                        base_likelihood -= (0.45 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                     }else{
                         base_likelihood = 0.0;
                     }
@@ -126,8 +110,8 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                             base_likelihood = 0.0;
                         }
                     }else{
-                        if (base_likelihood - (0.40 *(1/(player.hand_strength)) as f32)) >= 0.0{
-                            base_likelihood -= (0.40 *(1/(player.hand_strength)) as f32); //This amount needs to be relative to hand strength and raise amount
+                        if (base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32)) >= 0.0{
+                            base_likelihood -= (0.40 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -182,24 +166,24 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
     }else if action == PlayerAction::Check{
         for other_action in other_players{
             if other_action == "Fold"{
-                base_likelihood += (1/player_count-1) as f32 - (1/(player_count)) as f32
+                base_likelihood += (1/(player_count-1)) as f32 - (1/(player_count)) as f32
             }else if other_action == "Raise"{
                 if game_phase == PokerPhase::PreFlop{
-                    if base_likelihood - (0.40 *(1/(player.hand_strength)) as f32) >= 0.0{
-                        base_likelihood -= 0.40 * (1/(player.hand_strength)) as f32; //This amount needs to be relative to hand strength and raise amount
+                    if base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                        base_likelihood -= 0.40 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                     }else{
                         base_likelihood = 0.0;
                     }
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.07 >= 0.0{
-                            base_likelihood - 0.07;
+                            base_likelihood -= 0.07;
                         }else{
                             base_likelihood = 0.0;
                         }
                     }else{
-                        if base_likelihood - (0.45 *(1/(player.hand_strength)) as f32) >= 0.0{
-                            base_likelihood -= 0.45 * (1/(player.hand_strength)) as f32; //This amount needs to be relative to hand strength and raise amount
+                        if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                            base_likelihood -= 0.45 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -234,11 +218,11 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
         }else if action == PlayerAction::Call {
             for other_action in other_players{
                 if other_action == "Fold"{
-                    base_likelihood += ((1/player_count-1) - (1/(player_count))) as f32
+                    base_likelihood += ((1/(player_count-1)) - (1/(player_count))) as f32
                 }else if other_action == "Raise"{
                     if game_phase == PokerPhase::PreFlop{
-                        if base_likelihood - (0.30 *(1/(player.hand_strength)) as f32) >= 0.0{
-                            base_likelihood -= 0.30 *(1/(player.hand_strength)) as f32; //This amount needs to be relative to hand strength and raise amount
+                        if base_likelihood - (0.30 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                            base_likelihood -= 0.30 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -250,8 +234,8 @@ pub fn utility_gained(action:PlayerAction, player:Player, game_phase:PokerPhase,
                                 base_likelihood = 0.0;
                             }
                         }else{
-                            if base_likelihood - (0.35 *(1/(player.hand_strength)) as f32) >= 0.0{
-                                base_likelihood -= 0.35 *(1/(player.hand_strength)) as f32; //This amount needs to be relative to hand strength and raise amount
+                            if base_likelihood - (0.35 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                                base_likelihood -= 0.35 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                             }else{
                                 base_likelihood = 0.0;
                             }
@@ -302,15 +286,9 @@ pub fn update_strategy_for_hand(player: &mut Player, hand_category: usize) {
             let strategy_value = if normalizing_sum > 0.0 {  
                 regret.max(0.0) / normalizing_sum       //I believe this is the action probability we get using our regret
             } else {
-                1.0 / cfr_data.regret_sum.len() as f64
+                1.0 / cfr_data.regret_sum.len() as f32
             };
             cfr_data.strategy.insert(action.clone(), strategy_value); //This is where we update the strategy with the new probability
-        }
-
-        //Get our cumulative regret for the whole game
-        for (action, strategy_value) in cfr_data.strategy.iter() {
-            let cumulative_value = cfr_data.cumulative_strategy.entry(action.clone()).or_insert(0.0);
-            *cumulative_value += strategy_value;
         }
     }
 }
@@ -321,7 +299,7 @@ pub fn select_action_for_hand(player: &mut Player, hand_category: usize) -> Stri
     if let Some(cfr_data) = player.cfr_data.get(&hand_category) {
         let mut rng = rand::thread_rng();
         let mut cumulative_probability = 0.0;
-        let random_value = rng.gen::<f64>();
+        let random_value = rng.gen::<f32>();
 
         for (action, probability) in &cfr_data.strategy {
             cumulative_probability += probability;
@@ -338,12 +316,29 @@ pub fn select_action_for_hand(player: &mut Player, hand_category: usize) -> Stri
 
 
 // After each decision was made determine what the utilities were for the other decisions and update the corresponding regret for that action
-pub fn update_regrets_for_hand(player: &mut Player, hand_category: usize, actual_utility: f64, utilities: HashMap<String, f64>) {
+pub fn update_regrets_for_hand(player: &mut Mut<'_, Player>, hand_category: usize, actual_utility: f32, utilities: HashMap<String, f32>) {
     if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) {
+        // Update the regrets for all actions as usual
         for (action, &counterfactual_utility) in utilities.iter() {
             let regret = counterfactual_utility - actual_utility;
             let current_regret = cfr_data.regret_sum.entry(action.clone()).or_insert(0.0);
-            *current_regret += regret;
+
+            if regret > 0.0 {
+                *current_regret += regret;
+            }
+        }
+
+        // Move half of the regret of 'Check' to 'Call' to ensure no never ending cycle of calling when not possible
+        let half_check_regret = if let Some(check_regret) = cfr_data.regret_sum.get("Check") {
+            *check_regret / 2.0
+        } else {
+            0.0
+        };
+        if let Some(call_regret) = cfr_data.regret_sum.get_mut("Call") {
+            *call_regret += half_check_regret;
+        }
+        if let Some(check_regret) = cfr_data.regret_sum.get_mut("Check") {
+            *check_regret -= half_check_regret;
         }
     }
 }
