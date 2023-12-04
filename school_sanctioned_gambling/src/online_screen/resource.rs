@@ -1,8 +1,7 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use tokio::sync::{mpsc, RwLock};
 
 use crate::AppState;
 
@@ -19,9 +18,9 @@ pub struct GameInteraction {
 #[derive(Resource)]
 pub struct UserOperater{
     /// when ui get message,it will call send_message function
-    pub send_message: mpsc::Sender<Message>,
+    pub send_message: Arc<Mutex<std::sync::mpsc::Sender<Message>>>,
     /// when recever message
-    pub recv_message:mpsc::Receiver<Message>,
+    pub recv_message:Arc<Mutex<std::sync::mpsc::Receiver<Message>>>,
 }
 impl Default for GameInteraction {
     fn default() -> Self {
@@ -34,7 +33,7 @@ impl Default for GameInteraction {
 }
 #[derive(Resource, Default)]
 pub struct Users {
-    pub users: Arc<RwLock<Vec<UserInfo>>>,
+    pub users: Arc<Mutex<Vec<UserInfo>>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -60,10 +59,10 @@ pub enum Message {
 #[derive(Resource)]
 pub struct GameSigned {
     /// if it is false,server will close
-    pub sd: mpsc::Sender<()>,
+    pub sd: std::sync::mpsc::Sender<()>,
 
     /// next state
-    pub next_state: Arc<RwLock<AppState>>,
+    pub next_state: Arc<Mutex<AppState>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

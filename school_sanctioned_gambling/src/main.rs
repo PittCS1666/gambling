@@ -1,3 +1,4 @@
+#![feature(trivial_bounds)]
 use bevy::{prelude::*, window::PresentMode};
 
 mod credits;

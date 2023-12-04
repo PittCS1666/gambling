@@ -1,11 +1,23 @@
-use super::{AppState, Message, User, UserInfo, Users};
+
+
+use std::{thread::sleep, time::Duration};
+
+use crate::options::components::OptionsResult;
+
+use super::{AppState, Message, User, UserInfo, Users, UiInfo, UiInfoString, GameSigned};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
 
+
+/// when game enter wait state,the function will run,every time show users infomation
 pub(super) fn wait_screen_update(
+    mut command:Commands,
     mut contexts: EguiContexts,
     mut state: ResMut<NextState<AppState>>,
     users: Res<Users>,
+    mut ui_info:ResMut<UiInfo>,
+    signed: Res<GameSigned>,
+    option:Res<OptionsResult>,
 ) {
     egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
         ui.centered_and_justified(|ui| {
@@ -13,7 +25,7 @@ pub(super) fn wait_screen_update(
         });
     });
     let Users { ref users } = users.as_ref();
-    let users = users.blocking_read();
+    let users = users.lock().unwrap();
     let users_list = users
         .iter()
         .map(|User { ip, name, .. }| {
@@ -24,9 +36,16 @@ pub(super) fn wait_screen_update(
 
     egui::SidePanel::left("left").show(contexts.ctx_mut(), |ui| {
         if ui.button(RichText::new("Start").size(16.0)).clicked() {
+
+            if users.len()<option.num_players{
+                ui_info.set(UiInfoString::Warn("Player not full!".to_string()));
+                return
+            }
             users.iter().for_each(|e| {
                 e.send_message.send(Message::Start);
             });
+            signed.sd.send(super::resource::GameSignType::Start);
+            sleep(Duration::from_millis(100));
             state.set(AppState::GameRunning);
         }
 
@@ -36,7 +55,22 @@ pub(super) fn wait_screen_update(
             state.set(AppState::GameEnd);
         }
     });
+    egui::TopBottomPanel::bottom("info").show(contexts.ctx_mut(),|ui|{
+        match &ui_info.info{
+            UiInfoString::Info(i)=>{
+                ui.label(RichText::new(i).color(egui::Color32::GREEN));
+            }
+            UiInfoString::Warn(w)=>{
+                ui.label(RichText::new(w).color(egui::Color32::YELLOW));
+            }
+            UiInfoString::Error(e)=>{
+                ui.label(RichText::new(e).color(egui::Color32::RED));
+            }
+            UiInfoString::None=>{
 
+            }
+        }
+    });
     egui::CentralPanel::default().show(contexts.ctx_mut(), |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("Login")
@@ -50,7 +84,7 @@ pub(super) fn wait_screen_update(
 
                         if ui.button(RichText::new("kick").size(16.0).weak()).clicked() {
                             users.iter().for_each(|e| {
-                                e.send_message.blocking_send(Message::Kick(ip.to_string()));
+                                e.send_message.send(Message::Kick(ip.to_string()));
                             });
                         }
                         ui.end_row();

@@ -5,7 +5,7 @@ use bevy_egui::{
     *,
 };
 
-/// 初始大厅的ui
+/// init wait lobby,can enter server.
 pub(super) fn start_screen_update(
     mut contexts: EguiContexts,
     mut state: ResMut<NextState<AppState>>,
