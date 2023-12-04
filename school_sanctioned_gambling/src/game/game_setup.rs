@@ -1169,19 +1169,22 @@ pub fn turn_system(
                 if winners.contains(&player.player_id) {
                     if winners.iter().count() > 1 {
                         println!("Player {} ties and gains a pot of {}\n", player.player_id, state.pot/winners.iter().count());
+                        turn_text.sections[0].value = format!("It's a draw!");
                         player.cash += state.pot/winners.iter().count();
                     }
                     else {
                         println!("Player {} wins and gains a pot of {}\n", player.player_id, state.pot);
                         player.cash += state.pot;
+                        if player.player_id == 0 {
+                            turn_text.sections[0].value = format!("You won!");
+                        }
+                        else {
+                            turn_text.sections[0].value = format!("AI {} won!", player.player_id);
+                        }
                     } 
 
                     if player.player_id == 0 {
                         money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
-                        turn_text.sections[0].value = format!("You won!");
-                    }
-                    else {
-                        turn_text.sections[0].value = format!("AI {} won!", player.player_id);
                     }
                     turn_text.sections[1].value = format!("");
                 }
