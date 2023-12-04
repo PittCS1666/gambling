@@ -146,6 +146,7 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, options_result: &R
             small_blind: false,
             cfr_data,
             ai_type: options_result.ai_type,
+            raise_amount: 50,
         });
     }
     result
@@ -244,6 +245,7 @@ pub fn spawn_player_cards(
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
                 ai_type: options_result.ai_type,
+                raise_amount: 50,
             });
         }
 

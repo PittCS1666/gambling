@@ -8,6 +8,7 @@ use crate::options::components::OptionsResult;
 use super::hard_ai_logic::*;
 // use rand::Rng;
 use super::easy_ai_logic::*;
+use super::cheating_ai_logic::*;
 use bevy::text::BreakLineOn;
 use crate::AppState;
 use bevy::input::keyboard::KeyboardInput;
@@ -304,7 +305,10 @@ fn process_player_turn(
     mut text_query: &mut Query<&mut Text, With<VisText>>,
     mut community_query: &mut Query<&CommunityCards>,
     mut timer_query: &mut Query<(Entity, &mut AITimer)>,
+    mut deck: &mut ResMut<Deck>,
 ) {
+    let future_knowledge = find_winning_hand(player_entity_query, deck, community_query);
+
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
@@ -330,15 +334,18 @@ fn process_player_turn(
                                 hand_category = (generate_post_flop_hand_strength(&mut player.cards, &mut community_query)) as usize;
                             }
 
-                            if player.ai_type == 0 {
+                            if player.ai_type == 0 { // easy AI
                                 player_move = generate_move(&mut player, &state, community_query);
                                 state.all_last_move[player.player_id] = player_move.clone();
-                            } else {
+                            } else if player.ai_type == 2 { // Cheating AI
+                                player_move = generate_cheating_move(&mut player, &state, future_knowledge);
+                                state.all_last_move[player.player_id] = player_move.clone();
+                            } else { // hard AI
                                 player_move = select_action_for_hand(&mut player, hand_category);
                                 state.all_last_move[player.player_id] = player_move.clone();
                             }
                             if player_move.eq("Raise") {
-                                state.current_top_bet += 50;
+                                state.current_top_bet += player.raise_amount;
                                 println!("Current top bet is now: ${}", state.current_top_bet);
                                 player_raised = raise_action(state, &mut player, player_count, &mut last_action, &mut text_query);
                                 
@@ -861,6 +868,7 @@ pub fn turn_system(
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
                 ai_type: player.ai_type,
+                raise_amount: player.raise_amount,
             });
         } 
         spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data, &options_result);//get file contents
@@ -1082,7 +1090,7 @@ pub fn turn_system(
                 }
 
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -1098,7 +1106,7 @@ pub fn turn_system(
                 }
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -1112,7 +1120,7 @@ pub fn turn_system(
                 }
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query); 
         }
@@ -1126,7 +1134,7 @@ pub fn turn_system(
                 }
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }

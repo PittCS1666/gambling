@@ -28,6 +28,7 @@ impl Plugin for OptionsPlugin {
             )
             .add_systems(Update, easy_button_interaction.run_if(in_state(AppState::Options)))
             .add_systems(Update, hard_button_interaction.run_if(in_state(AppState::Options)))
+            .add_systems(Update, cheating_button_interaction.run_if(in_state(AppState::Options)))
             .add_systems(Update, update_button_colors.run_if(in_state(AppState::Options)));
     }
 }

@@ -194,6 +194,28 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                         ));
                     })
                     .insert(HardAiButton);
+
+                    parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Cheating",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(CheatingAiButton);
                 });
 
             // spawn local game button
@@ -388,23 +410,41 @@ pub fn hard_button_interaction(
     }
 }
 
+pub fn cheating_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<CheatingAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Cheating {
+            ai_button_state.selected = AiSelection::Cheating;
+            results.ai_type = 2;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Cheating });
+        }
+    }
+}
+
 pub fn update_button_colors(
     mut button_query: Query<(
         Entity, 
         &mut BackgroundColor, 
         Option<&EasyAiButton>, 
-        Option<&HardAiButton>
+        Option<&HardAiButton>,
+        Option<&CheatingAiButton>,
     )>,
     ai_button_state: Res<AiButtonState>,
 ) {
-    for (_entity, mut background_color, easy_button, hard_button) in button_query.iter_mut() {
+    for (_entity, mut background_color, easy_button, hard_button, cheating_button) in button_query.iter_mut() {
         if easy_button.is_some() && ai_button_state.selected == AiSelection::Easy {
             *background_color = Color::RED.into();
         } else if hard_button.is_some() && ai_button_state.selected == AiSelection::Hard {
             *background_color = Color::RED.into();
+        } else if cheating_button.is_some() && ai_button_state.selected == AiSelection::Cheating {
+            *background_color = Color::RED.into();
         } else {
             // If the entity is one of the buttons, but not currently selected
-            if easy_button.is_some() || hard_button.is_some() {
+            if easy_button.is_some() || hard_button.is_some() || cheating_button.is_some() {
                 *background_color = Color::rgb(0.071, 0.141, 0.753).into();
             }
         }
