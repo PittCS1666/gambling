@@ -153,6 +153,8 @@ fn spawn_players(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     player_num: &ResMut<NumPlayers>,
+    // added users to be passed in so we can differentiate them
+    users: &Res<Users>, 
 ) {
     let player_pos: Vec<(f32, f32, f32)> = vec![
         (225., 170., 2.),
@@ -168,6 +170,13 @@ fn spawn_players(
 
     //spawn the players
     for i in 0..player_num.player_count {
+
+        let unique_client_id = {
+            let users_data = users.users.lock().unwrap();
+            let user = &users_data[i];
+            user.name.clone()
+        };
+
         commands
             .spawn(SpriteBundle {
                 sprite: Sprite {
@@ -182,7 +191,7 @@ fn spawn_players(
             .with_children(|parent| {
                 parent.spawn(Text2dBundle {
                     text: Text::from_section(
-                        String::from("P ") + &(i + 1).to_string(),
+                        format!("P {}", unique_client_id), //+ &(i + 1).to_string(),
                         TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
                             font_size: 30.0,
