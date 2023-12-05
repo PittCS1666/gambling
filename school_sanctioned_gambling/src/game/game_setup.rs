@@ -290,8 +290,8 @@ pub fn tear_down_game_screen(
     state.pot_raised = false;
     state.small_blind = 1;
     state.big_blind = 0;
-    state.small_blind_val = 25;
-    state.big_blind_val = 50;
+    state.small_blind_val = 5;
+    state.big_blind_val = 10;
 }
 
 fn process_player_turn(
@@ -338,7 +338,7 @@ fn process_player_turn(
                                 state.all_last_move[player.player_id] = player_move.clone();
                             }
                             if player_move.eq("Raise") {
-                                state.current_top_bet += 50;
+                                state.current_top_bet += state.big_blind_val * 2;
                                 println!("Current top bet is now: ${}", state.current_top_bet);
                                 player_raised = raise_action(state, &mut player, player_count, &mut last_action, &mut text_query);
                                 
