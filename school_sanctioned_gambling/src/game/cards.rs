@@ -170,15 +170,17 @@ pub fn deal_com_function(
     result
 }
 
-pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Player>) -> usize {
+pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Player>) -> Vec<usize> {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query
         .iter()
         .flat_map(|cards| &cards.cards)
         .cloned()
         .collect();
-    let mut hand1: Hand = Hand::_new_blank();
-    let mut hand2: Hand = Hand::_new_blank();
+    //let mut hand1: Hand = Hand::_new_blank();
+    //let mut hand2: Hand = Hand::_new_blank();
+    let mut hands: Vec<Hand> = Vec::new();
+    let mut ids: Vec<usize> = Vec::new();
     // Iterate through each player
     for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
@@ -189,22 +191,26 @@ pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Pl
                 player_cards.to_vec(),
                 community_cards.to_vec(),
             );
-            if player_cards_component.player_id == 0 {
-                hand1 = hand;
-            } else {
-                hand2 = hand;
-            }
+            hands.push(hand);
+            ids.push(player_cards_component.player_id);
         }
     }
 
-    let comparison = compare_hands(&mut hand1, &mut hand2);
-    if comparison == 1 {
-        return 0;
-    } else if comparison == 2 {
-        return 1;
-    } else {
-        return 2;
+    let mut best_hand: Hand = hands[0].clone();
+    let mut winners: Vec<usize> = Vec::new();
+    for (i, mut hand) in hands.iter_mut().enumerate() {
+        let res = compare_hands(hand, &mut best_hand);
+        if res == 1 {
+            best_hand = hand.clone();
+            winners.push(ids[i]);
+        }
+        else if res == 0 {
+            winners.push(ids[i]);
+        }
     }
+
+    winners
+
 }
 
 pub fn spawn_player_cards(

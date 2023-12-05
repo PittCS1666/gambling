@@ -1,6 +1,7 @@
 use super::cards::*;
 use std::collections::HashSet;
 
+#[derive(Clone)]
 pub struct Hand {
     cards: Vec<Card>, //a vector with the 5 cards in a hand
     ranks: Vec<u8>,   //a vector that holds the number of each rank that is in the hand
