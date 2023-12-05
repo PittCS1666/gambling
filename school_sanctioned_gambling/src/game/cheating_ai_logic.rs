@@ -30,7 +30,7 @@ pub fn find_winning_hand(
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.cash != 0 {
             let mut hand_and_community: Vec<Card> = Vec::new();
-            hand_and_community.append(&mut player.cards);
+            hand_and_community.append(&mut player.cards.clone());
             hand_and_community.append(&mut community_cards);
             hand_and_community.append(&mut future_com);
             let best_hand = find_best_hand(&hand_and_community).score;
