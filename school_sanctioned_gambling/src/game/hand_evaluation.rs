@@ -226,8 +226,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         return 2;
     }
 
-    println!("hand 1 ranks: {}", hand1.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
-    println!("hand 2 ranks: {}", hand2.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
+    //println!("hand 1 ranks: {}", hand1.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
+    //println!("hand 2 ranks: {}", hand2.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
     if score1 == 1 {
         //compare pairs
         let pair1 = find_next(&hand1.ranks, 0, 2);
