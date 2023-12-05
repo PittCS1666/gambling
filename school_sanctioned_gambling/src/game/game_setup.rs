@@ -308,6 +308,7 @@ fn process_player_turn(
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
+            //println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
             let mut text_iter = text_query.iter_mut();
             let _money_text = text_iter.next();
             let mut turn_text = text_iter.next().unwrap();
@@ -316,7 +317,7 @@ fn process_player_turn(
                 if !player.has_folded && !player.is_all_in /*&& player.cash > 0*/ {
                     turn_text.sections[0].value = format!("It is AI {}'s turn!\n", player.player_id);
                     if timer_query.iter().count() == 0 {
-                        commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
+                        commands.spawn(AITimer{timer: Timer::from_seconds(2.0, TimerMode::Once)});
                     }
                     else {
                         let (timer_entity, timer) = timer_query.single_mut();
@@ -536,7 +537,6 @@ pub fn raise_action (
         else {
             turn_text.sections[1].value = format!("AI {} raised the bet to {}", player.player_id, state.current_top_bet);
         }
-        println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
 
         player.has_moved = true;
         player.has_raised = true;
@@ -1344,6 +1344,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Flop;
                 state.current_top_bet = 0;
@@ -1353,6 +1354,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Turn;
                 state.current_top_bet = 0;
@@ -1362,6 +1364,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::River;
                 state.current_top_bet = 0;
@@ -1371,6 +1374,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Showdown;
                 state.current_top_bet = 0;

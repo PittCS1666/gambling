@@ -181,10 +181,13 @@ pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Pl
     //let mut hand2: Hand = Hand::_new_blank();
     let mut hands: Vec<Hand> = Vec::new();
     let mut ids: Vec<usize> = Vec::new();
+    println!("Community: {}", community_cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     // Iterate through each player
     for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
         // Ensure there are at least 5 cards between the player and community cards before evaluation
+        println!("Player, {}: {}", player_cards_component.player_id, player_cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
+        
         if player_cards.len() + community_cards.len() >= 5 {
             let hand = test_evaluator(
                 player_cards_component.player_id,
@@ -200,8 +203,17 @@ pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Pl
     let mut winners: Vec<usize> = Vec::new();
     for (i, mut hand) in hands.iter_mut().enumerate() {
         let res = compare_hands(hand, &mut best_hand);
+        println!("Res: {}", res);
+        println!("Hand 1: {}", Hand::to_string(hand));
+        println!("Hand 2: {}", Hand::to_string(&best_hand));
         if res == 1 {
             best_hand = hand.clone();
+        }
+    }
+
+    for (i, mut hand) in hands.iter_mut().enumerate() {
+        let res = compare_hands(hand, &mut best_hand);
+        if res == 1 {
             winners.push(ids[i]);
         }
         else if res == 0 {

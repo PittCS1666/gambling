@@ -24,7 +24,7 @@ pub fn generate_post_flop_hand_strength(
     }*/
 
     let mut hand_and_community: Vec<Card> = Vec::new();
-    hand_and_community.append(&mut hand);
+    hand_and_community.append(&mut hand.clone());
 
     for community_cards in community_query.iter() {
         hand_and_community.append(&mut community_cards.cards.to_vec())
