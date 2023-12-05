@@ -9,8 +9,8 @@ pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_ui(&mut commands, &asset_server);
     let results = OptionsResult {
         money_per_player: 500,
-        small_blind_amount: 25,
-        big_blind_amount: 50,
+        small_blind_amount: 5,
+        big_blind_amount: 10,
         num_players: 2,
         is_loaded_game: false,
         ai_type: 0,
@@ -76,8 +76,8 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
             // do all the text boxes
             let mut counter = 1;
             for label in [
-                "small blind amount (default=25): ",
-                "big blind amount (default=50): ",
+                "small blind amount (default=5): ",
+                "big blind amount (default=10): ",
                 "starting money per player (default=500): ",
                 "number of players (2-6) (default=2): ",
             ] {

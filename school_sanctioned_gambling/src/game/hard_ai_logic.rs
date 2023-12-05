@@ -221,8 +221,8 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     base_likelihood += ((1/(player_count-1)) - (1/(player_count))) as f32
                 }else if other_action == "Raise"{
                     if game_phase == PokerPhase::PreFlop{
-                        if base_likelihood - (0.30 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
-                            base_likelihood -= 0.30 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
+                        if base_likelihood - (0.28 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                            base_likelihood -= 0.28 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
                             base_likelihood = 0.0;
                         }
@@ -251,13 +251,13 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     }else{
                         if player.hand_strength == 30{
                             if base_likelihood + 0.06 <= 1.0{
-                                base_likelihood += 0.06;
+                                base_likelihood += 0.09;
                             }else{
                                 base_likelihood = 1.0;
                             }
                         }else{
-                            if base_likelihood + (0.0015 * player.hand_strength as f32) >= 0.0{
-                                base_likelihood += 0.0015 * player.hand_strength as f32;
+                            if base_likelihood + (0.002 * player.hand_strength as f32) >= 0.0{
+                                base_likelihood += 0.002 * player.hand_strength as f32;
                             }else{
                                 base_likelihood = 1.0;
                             }
