@@ -100,20 +100,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                         base_likelihood -= (0.45 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                     }else{
-                        base_likelihood = 0.0;
+                        base_likelihood = 0.1;
                     }
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.15 > 0.0{
                             base_likelihood -= 0.15;
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if (base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32)) >= 0.0{
                             base_likelihood -= (0.40 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }
                 }
@@ -172,20 +172,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     if base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                         base_likelihood -= 0.40 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                     }else{
-                        base_likelihood = 0.0;
+                        base_likelihood = 0.1;
                     }
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.07 >= 0.0{
                             base_likelihood -= 0.07;
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                             base_likelihood -= 0.45 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }
                 }
@@ -224,20 +224,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                         if base_likelihood - (0.28 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                             base_likelihood -= 0.28 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if player.hand_strength == 30{
                             if base_likelihood - 0.06 >= 0.0{
                                 base_likelihood -= 0.06
                             }else{
-                                base_likelihood = 0.0;
+                                base_likelihood = 0.1;
                             }
                         }else{
                             if base_likelihood - (0.35 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                                 base_likelihood -= 0.35 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                             }else{
-                                base_likelihood = 0.0;
+                                base_likelihood = 0.1;
                             }
                         }
                     }
