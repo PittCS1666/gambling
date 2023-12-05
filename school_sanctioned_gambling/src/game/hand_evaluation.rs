@@ -1,6 +1,7 @@
 use super::cards::*;
 use std::collections::HashSet;
 
+#[derive(Clone)]
 pub struct Hand {
     cards: Vec<Card>, //a vector with the 5 cards in a hand
     ranks: Vec<u8>,   //a vector that holds the number of each rank that is in the hand
@@ -33,7 +34,7 @@ impl Hand {
         }
     }
 
-    fn to_string(hand: &Hand) -> String {
+    pub fn to_string(hand: &Hand) -> String {
         if hand.cards.is_empty() {
             return String::from("No cards in hand");
         }
@@ -66,7 +67,7 @@ pub fn test_evaluator(
         .chain(community_cards.into_iter())
         .collect();
     //use println below to see players cards in terminal
-    //println!("{}", cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
+    //println!("Player, {}: {}", player_id, cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
     println!("Player {}: {}", player_id, Hand::to_string(&hand));
     return hand;
@@ -225,6 +226,8 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         return 2;
     }
 
+    println!("hand 1 ranks: {}", hand1.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
+    println!("hand 2 ranks: {}", hand2.ranks.iter().map(|rank| rank.to_string()).collect::<Vec<_>>().join(", "));
     if score1 == 1 {
         //compare pairs
         let pair1 = find_next(&hand1.ranks, 0, 2);
