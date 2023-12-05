@@ -45,11 +45,20 @@ pub fn load_game(
     mut player_num_mut: ResMut<NumPlayers>,
     mut poker_turn: ResMut<PokerTurn>,
     options_result: Res<OptionsResult>,
+    // added users resource
+    users: Res<Users>,
 ) {
     let mut player_money = options_result.money_per_player;
     let mut player_bet = 0;
     let pot = 0;
     let top_bet = 0;
+
+    // get first user's name in users vec
+    let first_user_name = if let Some(first_user) = users.lock().unwrap().first() {
+        first_user.name.clone()
+    } else{
+        "unknown".to_string()
+    }
 
     commands
         .spawn(SpriteBundle {
@@ -122,7 +131,7 @@ pub fn load_game(
             text: Text {
                 sections: vec![
                     TextSection {
-                        value: "It is AI 1's Turn!\n".to_string(),
+                        value: format!("It is {}'s Turn!\n", first_user_name),//"It is AI 1's Turn!\n".to_string(),
                         style: TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
                             font_size: 40.0,
@@ -146,13 +155,15 @@ pub fn load_game(
         .insert(VisText);
 
     spawn_option_buttons(&mut commands, &asset_server);
-    spawn_players(&mut commands, &asset_server, &player_num_mut);
+    spawn_players(&mut commands, &asset_server, &player_num_mut, &users);
 }
 
 fn spawn_players(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     player_num: &ResMut<NumPlayers>,
+    // added users to be passed in so we can differentiate them
+    users: &Res<Users>, 
 ) {
     let player_pos: Vec<(f32, f32, f32)> = vec![
         (225., 170., 2.),
@@ -168,6 +179,13 @@ fn spawn_players(
 
     //spawn the players
     for i in 0..player_num.player_count {
+
+        let unique_client_id = {
+            let users_data = users.users.lock().unwrap();
+            let user = &users_data[i];
+            user.name.clone()
+        };
+
         commands
             .spawn(SpriteBundle {
                 sprite: Sprite {
@@ -182,7 +200,7 @@ fn spawn_players(
             .with_children(|parent| {
                 parent.spawn(Text2dBundle {
                     text: Text::from_section(
-                        String::from("P ") + &(i + 1).to_string(),
+                        format!("{}", unique_client_id), // will display name of client //+ &(i + 1).to_string(),
                         TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
                             font_size: 30.0,
