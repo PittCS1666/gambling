@@ -45,15 +45,15 @@ impl Hand {
         let card4 = Card::to_string(&hand.cards[3]);
         let card5 = Card::to_string(&hand.cards[4]);
 
-        format!(
+        String::from(format!(
             "{card1}, {card2}, {card3}, {card4}, and {card5} with a score of {score}",
             card1 = card1,
             card2 = card2,
             card3 = card3,
             card4 = card4,
             card5 = card5,
-            score = hand.score
-        )
+            score = hand.score.to_string()
+        ))
     }
 }
 
@@ -64,13 +64,13 @@ pub fn test_evaluator(
 ) -> Hand {
     let cards: Vec<Card> = player_cards
         .into_iter()
-        .chain(community_cards)
+        .chain(community_cards.into_iter())
         .collect();
     //use println below to see players cards in terminal
     //println!("Player, {}: {}", player_id, cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     let hand = find_best_hand(&cards);
     println!("Player {}: {}", player_id, Hand::to_string(&hand));
-    hand
+    return hand;
 }
 
 pub fn find_best_hand(cards: &Vec<Card>) -> Hand {
@@ -105,7 +105,7 @@ pub fn find_best_hand(cards: &Vec<Card>) -> Hand {
         //println!("Best hand: {:?}", Hand::to_string(&best_hand));
     }
 
-    best_hand
+    return best_hand;
 }
 
 fn get_all_hands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
@@ -129,11 +129,11 @@ fn get_all_hands(cards: &Vec<Card>) -> Vec<Vec<Card>> {
             }
         }
     }
-    combinations
+    return combinations;
 }
 
 pub fn evaluate_hand(hand: &mut Hand) {
-    let is_flush = hand.suits == 1;
+    let is_flush = if hand.suits == 1 { true } else { false };
     let is_straight = is_straight(&hand.ranks);
     let mut is_four = false;
     let mut is_three = false;
@@ -205,7 +205,11 @@ fn is_straight(ranks: &Vec<u8>) -> bool {
     if (max_rank - min_rank) == 4 && unique_ranks == 5 {
         true
     } else if ace > 0 {
-        (max_rank - min_rank) == 3 && unique_ranks == 5 && (max_rank == 12 || min_rank == 1)
+        if (max_rank - min_rank) == 3 && unique_ranks == 5 && (max_rank == 12 || min_rank == 1) {
+            true
+        } else {
+            false
+        }
     } else {
         false
     }
@@ -322,7 +326,7 @@ pub fn compare_hands(hand1: &mut Hand, hand2: &mut Hand) -> u8 {
         }
     }
 
-    0
+    return 0;
 }
 
 fn compare(mut val1: u8, mut val2: u8) -> u8 {
@@ -334,7 +338,7 @@ fn compare(mut val1: u8, mut val2: u8) -> u8 {
     }
 
     if val1 > val2 {
-        1
+        return 1;
     } else if val2 > val1 {
         return 2;
     } else {

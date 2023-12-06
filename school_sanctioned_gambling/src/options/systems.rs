@@ -13,6 +13,7 @@ pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
         big_blind_amount: 10,
         num_players: 2,
         is_loaded_game: false,
+        ai_type: 0,
     }; // these are gonna be the defaults I guess
     commands.insert_resource(results);
 }
@@ -310,7 +311,7 @@ pub fn play_button_interaction(
                 for (ent, input) in &text_ent_query {
                     for descendant in children_query.iter_descendants(ent) {
                         if let Ok(text) = text_query.get_mut(descendant) {
-                            if text.sections[0].value.is_empty() {
+                            if text.sections[0].value == "" {
                                 continue;
                             }
                             let value = text.sections[0].value.parse::<usize>().unwrap(); // should never panic
@@ -361,6 +362,7 @@ pub fn play_button_interaction(
                     results.big_blind_amount = results_clone.big_blind_amount;
                     results.money_per_player = results_clone.money_per_player;
                     results.num_players = results_clone.num_players;
+                    results.ai_type = results_clone.ai_type;
                 } else {
                     // progress to next screen with given options
                     app_state_next_state.set(AppState::LocalPlay);
@@ -454,9 +456,6 @@ pub fn load_button_interaction(
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<LoadButton>),
     >,
-    _text_query: Query<&mut Text, With<TextBoxTag>>,
-    _text_ent_query: Query<(Entity, &TextBox)>,
-    _children_query: Query<&Children>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     mut results: ResMut<OptionsResult>,
 ) {
@@ -556,7 +555,7 @@ pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Add
                     ..default()
                 },
                 TextBoxTag {
-                    id: textbox.id,
+                    id: textbox.id.clone(),
                 },
             ))
             .id();
