@@ -18,6 +18,9 @@ pub struct EasyAiButton;
 #[derive(Component)]
 pub struct HardAiButton;
 
+#[derive(Component)]
+pub struct CheatingAiButton;
+
 #[derive(Component, Default, Debug)]
 pub struct TextBox {
     pub active: bool,
@@ -53,6 +56,7 @@ pub enum AiSelection {
     None,
     Easy,
     Hard,
+    Cheating,
 }
 
 impl Default for AiButtonState {

@@ -5,6 +5,97 @@ use bevy::prelude::*;
 use rand::Rng;
 use std::collections::HashMap;
 
+struct TreeNode {
+    decision: bool,
+    boundary: u16,
+    poker_move: String,
+    left: Option<Box<TreeNode>>,
+    right: Option<Box<TreeNode>>,
+}
+
+impl TreeNode {
+    fn new(check_boundary: u16, fold_boundary: u16, call_boundary: u16) -> TreeNode{
+        TreeNode{
+            decision: true,
+            boundary: check_boundary,
+            poker_move: "".to_string(),
+            left: Some(Box::new(TreeNode {
+                    decision: false,
+                    boundary: 0,
+                    poker_move: "Check".to_string(),
+                    left: None,
+                    right: None,
+                })),
+            right: Some(Box::new(TreeNode {
+                    decision: true,
+                    boundary: fold_boundary,
+                    poker_move: "".to_string(),
+                    left: Some(Box::new(TreeNode {
+                            decision: false,
+                            boundary: 0,
+                            poker_move: "Fold".to_string(),
+                            left: None,
+                            right: None,
+                        })),
+                    right: Some(Box::new(TreeNode {
+                            decision: true,
+                            boundary: call_boundary,
+                            poker_move: "".to_string(),
+                            left: Some(Box::new(TreeNode {
+                                    decision: false,
+                                    boundary: 0,
+                                    poker_move: "Call".to_string(),
+                                    left: None,
+                                    right: None,
+                                })),
+                            right: Some(Box::new(TreeNode {
+                                    decision: false,
+                                    boundary: 0,
+                                    poker_move: "Raise".to_string(),
+                                    left: None,
+                                    right: None,
+                                })),
+                        }))
+                }))
+        }
+    }
+
+    fn new_blank() -> TreeNode {
+        TreeNode {
+            decision: false,
+            boundary: 0,
+            poker_move: "".to_string(),
+            left: None,
+            right: None,
+        }
+    }
+
+    fn get_move(head: TreeNode, num: u16) -> String{
+        let mut cur_node = head;
+        loop {
+            if cur_node.decision == true {
+                if num <= cur_node.boundary {
+                    cur_node = match cur_node.left {
+                        None => TreeNode::new_blank(),
+                        Some(i) => *i,
+                    };
+                }
+                else {
+                    cur_node = match cur_node.right {
+                        None => TreeNode::new_blank(),
+                        Some(i) => *i,
+                    };
+                }
+            }
+            else {
+                return cur_node.poker_move;
+            }
+
+        }
+    }
+    
+}
+
 //Simply sets Ace to strongest card. All others remain the same
 pub fn generate_card_strength(val: u8) -> u8 {
     if val == 1 {
@@ -24,7 +115,7 @@ pub fn generate_post_flop_hand_strength(
     }*/
 
     let mut hand_and_community: Vec<Card> = Vec::new();
-    hand_and_community.append(&mut hand);
+    hand_and_community.append(&mut hand.clone());
 
     for community_cards in community_query.iter() {
         hand_and_community.append(&mut community_cards.cards.to_vec())
@@ -48,7 +139,7 @@ pub fn generate_move(
     mut community_query: &mut Query<&CommunityCards>,
 ) -> String {
     //Check for poker phase
-    let mut _num = 101;
+    let mut _num: u16 = 101;
     let mut chosen_dist = player.move_dist.get(&player.hand_strength);
 
     if poker_turn.phase == PokerPhase::PreFlop {
@@ -76,7 +167,10 @@ pub fn generate_move(
         _num = rand::thread_rng().gen_range(0..=100);
     }
 
-    if _num <= chosen_dist.unwrap()[0] {
+    let decision_tree = TreeNode::new(chosen_dist.unwrap()[0], chosen_dist.unwrap()[1], chosen_dist.unwrap()[2]);
+    TreeNode::get_move(decision_tree, _num)
+
+    /*if _num <= chosen_dist.unwrap()[0] {
         "Check".to_string()
     } else if _num <= chosen_dist.unwrap()[1] {
         "Fold".to_string()
@@ -84,7 +178,7 @@ pub fn generate_move(
         "Call".to_string()
     } else {
         "Raise".to_string()
-    }
+    }*/
 }
 
 //We have a vector of value ranges each representing a pre-flop move.

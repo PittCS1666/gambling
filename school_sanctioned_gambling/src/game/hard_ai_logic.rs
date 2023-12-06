@@ -33,19 +33,19 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
             if base_likelihood - 0.12 >= 0.0{
                 base_likelihood -= 0.12;
             }else{
-                base_likelihood = 0.0;
+                base_likelihood = 0.1;
             }
         }else if player.hand_strength > 4 && player.hand_strength <= 8{
             if base_likelihood - 0.08 >= 0.0{
                 base_likelihood -= 0.08;
             }else{
-                base_likelihood = 0.0;
+                base_likelihood = 0.1;
             }
         }else if player.hand_strength > 8 && player.hand_strength <= 12{
             if base_likelihood - 0.07 >= 0.0{
                 base_likelihood -= 0.07;
             }else{
-                base_likelihood = 0.0;
+                base_likelihood = 0.1;
             }
         }else if player.hand_strength > 12 && player.hand_strength <= 16{
             base_likelihood = base_likelihood;
@@ -100,20 +100,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                         base_likelihood -= (0.45 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                     }else{
-                        base_likelihood = 0.0;
+                        base_likelihood = 0.1;
                     }
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.15 > 0.0{
                             base_likelihood -= 0.15;
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if (base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32)) >= 0.0{
                             base_likelihood -= (0.40 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }
                 }
@@ -172,20 +172,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                     if base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                         base_likelihood -= 0.40 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                     }else{
-                        base_likelihood = 0.0;
+                        base_likelihood = 0.1;
                     }
                 }else{
                     if player.hand_strength == 30{
                         if base_likelihood - 0.07 >= 0.0{
                             base_likelihood -= 0.07;
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                             base_likelihood -= 0.45 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }
                 }
@@ -224,20 +224,20 @@ pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase
                         if base_likelihood - (0.28 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                             base_likelihood -= 0.28 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                         }else{
-                            base_likelihood = 0.0;
+                            base_likelihood = 0.1;
                         }
                     }else{
                         if player.hand_strength == 30{
                             if base_likelihood - 0.06 >= 0.0{
                                 base_likelihood -= 0.06
                             }else{
-                                base_likelihood = 0.0;
+                                base_likelihood = 0.1;
                             }
                         }else{
                             if base_likelihood - (0.35 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
                                 base_likelihood -= 0.35 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
                             }else{
-                                base_likelihood = 0.0;
+                                base_likelihood = 0.1;
                             }
                         }
                     }
@@ -339,6 +339,16 @@ pub fn update_regrets_for_hand(player: &mut Mut<'_, Player>, hand_category: usiz
         }
         if let Some(check_regret) = cfr_data.regret_sum.get_mut("Check") {
             *check_regret -= half_check_regret;
+        }
+
+        // Similar logic to above without the removal of regret from raise to still keep AI competitive, this is to prevent infinite raising and never ending
+        let half_raise_regret = if let Some(raise_regret) = cfr_data.regret_sum.get("Raise") {
+            *raise_regret / 2.0
+        } else {
+            0.0
+        };
+        if let Some(call_regret) = cfr_data.regret_sum.get_mut("Call") {
+            *call_regret += half_raise_regret;
         }
     }
 }
