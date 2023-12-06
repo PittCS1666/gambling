@@ -1,0 +1,3 @@
+dude,20000
+test_player1,6000
+test_player2,3000

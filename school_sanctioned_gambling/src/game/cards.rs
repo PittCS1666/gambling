@@ -145,6 +145,8 @@ pub fn deal_hands(player_count: usize, cards: &mut Vec<Card>, starting_cash: usi
             big_blind: false,
             small_blind: false,
             cfr_data,
+            ai_type: options_result.ai_type,
+            raise_amount: 50,
         });
     }
     result
@@ -174,41 +176,59 @@ pub fn deal_com_function(
     result
 }
 
-pub fn card_function(community_query: &Query<&CommunityCards>, players: &[&Player]) -> usize {
+pub fn card_function(community_query: &Query<&CommunityCards>, players: &Vec<&Player>) -> Vec<usize> {
     // Takes all cards from communtiy_query and flattens it to a single card vector for use
     let community_cards: Vec<Card> = community_query
         .iter()
         .flat_map(|cards| &cards.cards)
         .cloned()
         .collect();
-    let mut hand1: Hand = Hand::_new_blank();
-    let mut hand2: Hand = Hand::_new_blank();
+    //let mut hand1: Hand = Hand::_new_blank();
+    //let mut hand2: Hand = Hand::_new_blank();
+    let mut hands: Vec<Hand> = Vec::new();
+    let mut ids: Vec<usize> = Vec::new();
+    println!("Community: {}", community_cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
     // Iterate through each player
     for player_cards_component in players.iter() {
         let player_cards = &player_cards_component.cards;
         // Ensure there are at least 5 cards between the player and community cards before evaluation
+        println!("Player, {}: {}", player_cards_component.player_id, player_cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
+        
         if player_cards.len() + community_cards.len() >= 5 {
             let hand = test_evaluator(
                 player_cards_component.player_id,
                 player_cards.to_vec(),
                 community_cards.to_vec(),
             );
-            if player_cards_component.player_id == 0 {
-                hand1 = hand;
-            } else {
-                hand2 = hand;
-            }
+            hands.push(hand);
+            ids.push(player_cards_component.player_id);
         }
     }
 
-    let comparison = compare_hands(&mut hand1, &mut hand2);
-    if comparison == 1 {
-        0
-    } else if comparison == 2 {
-        1
-    } else {
-        2
+    let mut best_hand: Hand = hands[0].clone();
+    let mut winners: Vec<usize> = Vec::new();
+    for (i, mut hand) in hands.iter_mut().enumerate() {
+        let res = compare_hands(hand, &mut best_hand);
+        println!("Res: {}", res);
+        println!("Hand 1: {}", Hand::to_string(hand));
+        println!("Hand 2: {}", Hand::to_string(&best_hand));
+        if res == 1 {
+            best_hand = hand.clone();
+        }
     }
+
+    for (i, mut hand) in hands.iter_mut().enumerate() {
+        let res = compare_hands(hand, &mut best_hand);
+        if res == 1 {
+            winners.push(ids[i]);
+        }
+        else if res == 0 {
+            winners.push(ids[i]);
+        }
+    }
+
+    winners
+
 }
 
 pub fn spawn_player_cards(
@@ -246,6 +266,8 @@ pub fn spawn_player_cards(
                 big_blind: false,
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
+                ai_type: options_result.ai_type,
+                raise_amount: 50,
             });
         }
 

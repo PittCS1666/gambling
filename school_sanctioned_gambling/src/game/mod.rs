@@ -8,6 +8,7 @@ mod easy_ai_logic;
 mod game_setup;
 mod hand_evaluation;
 mod hard_ai_logic;
+mod cheating_ai_logic;
 
 use buttons::*;
 use cards::*;

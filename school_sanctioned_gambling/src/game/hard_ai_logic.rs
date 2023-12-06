@@ -44,6 +44,254 @@ impl CfrData {
     }
 }
 
+//Parameters: game phase, other player moves
+pub fn utility_gained(action:PlayerAction, player:&Player, game_phase:PokerPhase, other_players:Vec<String>, player_count: usize, prev_likelihood: f32) -> f32{
+    let mut base_likelihood = prev_likelihood;
+    //Increase/Decrease win likelihood depending on hand strength and round
+    if game_phase == PokerPhase::PreFlop{
+        if player.hand_strength >= 2 && player.hand_strength <= 4{
+            if base_likelihood - 0.12 >= 0.0{
+                base_likelihood -= 0.12;
+            }else{
+                base_likelihood = 0.1;
+            }
+        }else if player.hand_strength > 4 && player.hand_strength <= 8{
+            if base_likelihood - 0.08 >= 0.0{
+                base_likelihood -= 0.08;
+            }else{
+                base_likelihood = 0.1;
+            }
+        }else if player.hand_strength > 8 && player.hand_strength <= 12{
+            if base_likelihood - 0.07 >= 0.0{
+                base_likelihood -= 0.07;
+            }else{
+                base_likelihood = 0.1;
+            }
+        }else if player.hand_strength > 12 && player.hand_strength <= 16{
+            base_likelihood = base_likelihood;
+        }else if player.hand_strength > 16 && player.hand_strength <= 20{
+            base_likelihood += 0.12
+        }else if player.hand_strength > 20 && player.hand_strength <= 24{
+            base_likelihood += 0.2
+        }else if player.hand_strength > 24 && player.hand_strength <= 28{
+            base_likelihood += 0.27
+        }
+    //Any non-preflop round
+    }else{
+        if player.hand_strength == 30{
+            if base_likelihood - 0.06 >= 0.0{
+                base_likelihood -= 0.06;
+            }else{
+                base_likelihood = 0.0;
+            }
+        }else if player.hand_strength == 31{
+            base_likelihood += 0.01
+        }else if player.hand_strength == 32{
+            base_likelihood += 0.02
+        }else if player.hand_strength == 33{
+            base_likelihood += 0.04
+        }else if player.hand_strength == 34{
+            base_likelihood += 0.06
+        }else if player.hand_strength == 35{
+            base_likelihood += 0.08
+        }else if player.hand_strength == 36{
+            if base_likelihood + 0.09 > 1.0{
+                base_likelihood = 1.0;
+            }else{
+                base_likelihood += 0.09
+            }
+        }else if player.hand_strength == 37{
+            if base_likelihood + 0.1 > 1.0 {
+                base_likelihood = 1.0;
+            }else{
+                base_likelihood += 0.1
+            }
+        }
+    }
+    //Win likelihood changes based on own player action and opponent actions
+    if action == PlayerAction::Fold{
+        base_likelihood = 0.0;
+    }else if action == PlayerAction::Raise{
+        for other_action in other_players{
+            if other_action == "Fold"{
+                base_likelihood += ((1/(player_count-1)) as f32 - (1/(player_count)) as f32)
+            }else if other_action == "Raise"{
+                if game_phase == PokerPhase::PreFlop{
+                    if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                        base_likelihood -= (0.45 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
+                    }else{
+                        base_likelihood = 0.1;
+                    }
+                }else{
+                    if player.hand_strength == 30{
+                        if base_likelihood - 0.15 > 0.0{
+                            base_likelihood -= 0.15;
+                        }else{
+                            base_likelihood = 0.1;
+                        }
+                    }else{
+                        if (base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32)) >= 0.0{
+                            base_likelihood -= (0.40 *(1/(player.hand_strength + 1)) as f32); //This amount needs to be relative to hand strength and raise amount
+                        }else{
+                            base_likelihood = 0.1;
+                        }
+                    }
+                }
+            }else if other_action == "Check"{
+                if game_phase == PokerPhase::PreFlop{
+                    if base_likelihood + (0.002 * player.hand_strength as f32) <= 1.0{
+                        base_likelihood += (0.002 * player.hand_strength as f32);
+                    }else{
+                        base_likelihood = 1.0;
+                    }
+                }else{
+                    if player.hand_strength == 30{
+                        if base_likelihood + 0.03 <= 1.0{
+                            base_likelihood += 0.03;
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }else{
+                        if base_likelihood + (0.002 * player.hand_strength as f32) <= 1.0{
+                            base_likelihood += (0.002 * player.hand_strength as f32);
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }
+                }
+            }else{
+                if game_phase == PokerPhase::PreFlop{
+                    if base_likelihood + (0.001 * player.hand_strength as f32) <= 1.0{
+                        base_likelihood += 0.001 * player.hand_strength as f32;
+                    }else{
+                        base_likelihood = 1.0;
+                    }
+                }else{
+                    if player.hand_strength == 30{
+                        if base_likelihood + 0.01 >= 1.0{
+                            base_likelihood += 0.01;
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }else{
+                        if base_likelihood + (0.001 * player.hand_strength as f32) <= 1.0{
+                            base_likelihood += 0.001 * player.hand_strength as f32;
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }
+                }
+            }
+        }
+    }else if action == PlayerAction::Check{
+        for other_action in other_players{
+            if other_action == "Fold"{
+                base_likelihood += (1/(player_count-1)) as f32 - (1/(player_count)) as f32
+            }else if other_action == "Raise"{
+                if game_phase == PokerPhase::PreFlop{
+                    if base_likelihood - (0.40 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                        base_likelihood -= 0.40 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
+                    }else{
+                        base_likelihood = 0.1;
+                    }
+                }else{
+                    if player.hand_strength == 30{
+                        if base_likelihood - 0.07 >= 0.0{
+                            base_likelihood -= 0.07;
+                        }else{
+                            base_likelihood = 0.1;
+                        }
+                    }else{
+                        if base_likelihood - (0.45 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                            base_likelihood -= 0.45 * (1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
+                        }else{
+                            base_likelihood = 0.1;
+                        }
+                    }
+                }
+            }else if other_action == "Check"{
+                if game_phase == PokerPhase::PreFlop{
+                    base_likelihood = base_likelihood;
+                }else{
+                    base_likelihood = base_likelihood;
+                }
+            }else{
+                if game_phase == PokerPhase::PreFlop{
+                    if base_likelihood - (0.2 * (1/player.hand_strength) as f32) >= 0.0{
+                        base_likelihood -= 0.2 * (1/player.hand_strength) as f32;
+                    }else{
+                        base_likelihood = 1.0;
+                    }
+                }else{
+                    if player.hand_strength == 30{
+                        base_likelihood = base_likelihood;
+                    }else{
+                        if base_likelihood - (0.001 * player.hand_strength as f32) >= 0.0{
+                            base_likelihood -= 0.001 * player.hand_strength as f32;
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }
+                }
+            }
+            }
+        }else if action == PlayerAction::Call {
+            for other_action in other_players{
+                if other_action == "Fold"{
+                    base_likelihood += ((1/(player_count-1)) - (1/(player_count))) as f32
+                }else if other_action == "Raise"{
+                    if game_phase == PokerPhase::PreFlop{
+                        if base_likelihood - (0.28 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                            base_likelihood -= 0.28 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
+                        }else{
+                            base_likelihood = 0.1;
+                        }
+                    }else{
+                        if player.hand_strength == 30{
+                            if base_likelihood - 0.06 >= 0.0{
+                                base_likelihood -= 0.06
+                            }else{
+                                base_likelihood = 0.1;
+                            }
+                        }else{
+                            if base_likelihood - (0.35 *(1/(player.hand_strength + 1)) as f32) >= 0.0{
+                                base_likelihood -= 0.35 *(1/(player.hand_strength + 1)) as f32; //This amount needs to be relative to hand strength and raise amount
+                            }else{
+                                base_likelihood = 0.1;
+                            }
+                        }
+                    }
+                }else if other_action == "Check"{
+                    if game_phase == PokerPhase::PreFlop{
+                        if base_likelihood + (0.001 * player.hand_strength as f32) >= 0.0{
+                            base_likelihood += 0.001 * player.hand_strength as f32;
+                        }else{
+                            base_likelihood = 1.0;
+                        }
+                    }else{
+                        if player.hand_strength == 30{
+                            if base_likelihood + 0.06 <= 1.0{
+                                base_likelihood += 0.09;
+                            }else{
+                                base_likelihood = 1.0;
+                            }
+                        }else{
+                            if base_likelihood + (0.002 * player.hand_strength as f32) >= 0.0{
+                                base_likelihood += 0.002 * player.hand_strength as f32;
+                            }else{
+                                base_likelihood = 1.0;
+                            }
+                        }
+                    }
+                }else{
+                    base_likelihood = base_likelihood;
+                }
+            }
+        }
+    let utility = base_likelihood - prev_likelihood;
+    utility*100.0
+}
+
 // Using the regret for each action determine the new probabilities for each action
 pub fn update_strategy_for_hand(player: &mut Player, hand_category: usize) {
     if let Some(cfr_data) = player.cfr_data.get_mut(&hand_category) {
@@ -103,7 +351,33 @@ pub fn update_regrets_for_hand(
         for (action, &counterfactual_utility) in utilities.iter() {
             let regret = counterfactual_utility - actual_utility;
             let current_regret = cfr_data.regret_sum.entry(action.clone()).or_insert(0.0);
-            *current_regret += regret;
+
+            if regret > 0.0 {
+                *current_regret += regret;
+            }
+        }
+
+        // Move half of the regret of 'Check' to 'Call' to ensure no never ending cycle of calling when not possible
+        let half_check_regret = if let Some(check_regret) = cfr_data.regret_sum.get("Check") {
+            *check_regret / 2.0
+        } else {
+            0.0
+        };
+        if let Some(call_regret) = cfr_data.regret_sum.get_mut("Call") {
+            *call_regret += half_check_regret;
+        }
+        if let Some(check_regret) = cfr_data.regret_sum.get_mut("Check") {
+            *check_regret -= half_check_regret;
+        }
+
+        // Similar logic to above without the removal of regret from raise to still keep AI competitive, this is to prevent infinite raising and never ending
+        let half_raise_regret = if let Some(raise_regret) = cfr_data.regret_sum.get("Raise") {
+            *raise_regret / 2.0
+        } else {
+            0.0
+        };
+        if let Some(call_regret) = cfr_data.regret_sum.get_mut("Call") {
+            *call_regret += half_raise_regret;
         }
     }
 }

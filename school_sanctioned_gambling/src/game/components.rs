@@ -39,7 +39,7 @@ pub struct VisText;
 #[derive(Component)]
 pub struct Blind;
 
-#[derive(Component, Serialize, Deserialize)]
+#[derive(Component, Serialize, Deserialize, Clone)]
 pub struct Player {
     pub player_id: usize,
     pub cards: Vec<Card>,
@@ -54,6 +54,8 @@ pub struct Player {
     pub big_blind: bool,
     pub small_blind: bool,
     pub cfr_data: HashMap<usize, CfrData>,
+    pub ai_type: usize, // 0: easy AI, 1: hard AI, 2: cheating AI
+    pub raise_amount: usize,
 }
 
 // Data to store all cfr_data necessary for Hard AI

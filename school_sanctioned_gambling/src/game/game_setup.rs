@@ -6,6 +6,7 @@ use super::hard_ai_logic::select_action_for_hand;
 use crate::options::components::OptionsResult;
 // use rand::Rng;
 use super::easy_ai_logic::*;
+use super::cheating_ai_logic::*;
 use bevy::text::BreakLineOn;
 use crate::AppState;
 use bevy::input::keyboard::KeyboardInput;
@@ -284,8 +285,8 @@ pub fn tear_down_game_screen(
     state.pot_raised = false;
     state.small_blind = 1;
     state.big_blind = 0;
-    state.small_blind_val = 25;
-    state.big_blind_val = 50;
+    state.small_blind_val = 5;
+    state.big_blind_val = 10;
 }
 
 fn process_player_turn(
@@ -298,16 +299,20 @@ fn process_player_turn(
     text_query: &mut Query<&mut Text, With<VisText>>,
     community_query: &mut Query<&CommunityCards>,
     timer_query: &mut Query<(Entity, &mut AITimer)>,
+    mut deck: &mut ResMut<Deck>,
 ) {
+    let future_knowledge = find_winning_hand(player_entity_query, deck, community_query);
+
     let mut player_raised = false;
     for (_entity, mut player) in player_entity_query.iter_mut() {
         if player.player_id == current_player {
+            //println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
             let mut text_iter = text_query.iter_mut();
             let _money_text = text_iter.next();
             let mut turn_text = text_iter.next().unwrap();
 
             if player.player_id != 0 {
-                if !player.has_folded && !player.is_all_in {
+                if !player.has_folded && !player.is_all_in /*&& player.cash > 0*/ {
                     turn_text.sections[0].value = format!("It is AI {}'s turn!\n", player.player_id);
                     if timer_query.iter().count() == 0 {
                         commands.spawn(AITimer{timer: Timer::from_seconds(5.0, TimerMode::Once)});
@@ -324,9 +329,20 @@ fn process_player_turn(
                                 hand_category = (generate_post_flop_hand_strength(&mut player.cards, community_query)) as usize;
                             }
 
-                            let player_move: String = select_action_for_hand(&mut player, hand_category);
+                            if player.ai_type == 0 { // easy AI
+                                player_move = generate_move(&mut player, &state, community_query);
+                                state.all_last_move[player.player_id] = player_move.clone();
+                            } else if player.ai_type == 2 { // Cheating AI
+                                player_move = generate_cheating_move(&mut player, &state, future_knowledge);
+                                state.all_last_move[player.player_id] = player_move.clone();
+                            } else { // hard AI
+                                player_move = select_action_for_hand(&mut player, hand_category);
+                                state.all_last_move[player.player_id] = player_move.clone();
+                            }
                             if player_move.eq("Raise") {
-                                state.current_top_bet += 50;
+
+                                state.current_top_bet += player.raise_amount;
+
                                 println!("Current top bet is now: ${}", state.current_top_bet);
                                 player_raised = raise_action(state, player, player_count, &mut last_action, text_query);
                             }
@@ -434,7 +450,6 @@ pub fn raise_action (
         else {
             turn_text.sections[1].value = format!("AI {} raised the bet to {}", player.player_id, state.current_top_bet);
         }
-        println!("Player {} has raised the bet to {}", player.player_id, state.current_top_bet);
 
         player.has_moved = true;
         player.has_raised = true;
@@ -666,6 +681,8 @@ pub fn turn_system(
                 big_blind: false,
                 small_blind: false,
                 cfr_data: player.cfr_data.clone(),
+                ai_type: player.ai_type,
+                raise_amount: player.raise_amount,
             });
         } 
         spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
@@ -737,31 +754,19 @@ pub fn turn_system(
                     if !state.is_first_round {
                         thread::sleep(time::Duration::from_secs(5));
                     }
-                    let mut game_over: bool = false;
-                    if players_no_cash ==  player_count.player_count -1 {
-                        println!("Only one player with money left game over");
-                        let mut game_result = GameResult {
-                            id: 0,
-                        };
+                    
 
-                        for (_, player) in player_entity_query.iter_mut() {
-                            if player.cash != 0 {
-                                game_result.id = player.player_id;
-                            }
-                        }
-                        commands.insert_resource(game_result);
-                        app_state_next_state.set(AppState::GameOver);
-                        game_over = true;
+                    if deck.cards.iter().count() == 52 {
+                        println!("Phase is now in PreFlop!");
+                        let cards = &mut deck.cards;
+                        shuffle_cards(cards);
+                        let players_hands = deal_hands(player_count.player_count, cards, &options_result);
+                        spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data, &options_result);
                     }
-
-                    println!("Phase is now in PreFlop!");
-                    let cards = &mut deck.cards;
-                    shuffle_cards(cards);
-                    let players_hands = deal_hands(player_count.player_count, cards, options_result.money_per_player);
-                    spawn_player_cards(&mut commands, &players_hands, &mut player_entity_query, &sprite_data);
+                    
 
                     //loops through the players to find the big and small blinds
-                    if player_entity_query.iter().count() > 0 && !game_over {
+                    if player_entity_query.iter().count() > 0 /*&& !game_over*/ {
                         for (_, mut player) in player_entity_query.iter_mut() {
                             if player.player_id == state.small_blind {
                                 player.small_blind = true;
@@ -864,12 +869,32 @@ pub fn turn_system(
                         }
                         state.round_started = true;
                         println!("Pot is: {}", state.pot);
+                        state.round_started = true;
                     }
-                    state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    //state.round_started = true;
+                    //state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    if player_count.player_count > 3 {
+                        if state.big_blind == 2 {
+                            state.current_player = 0;
+                        }
+                        else if state.big_blind == 0 {
+                            state.current_player = 3;
+                        }
+                        else if state.big_blind == (player_count.player_count - 1) {
+                            state.current_player = 1;
+                        }
+                        else {
+                            state.current_player = (state.big_blind + 1) % player_count.player_count;
+                        }
+                    }
+                    else {
+                        state.current_player = (state.big_blind + 1) % player_count.player_count;
+                    }
+                    //println!("8 Current player is now: {}", state.current_player);
                 }
 
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -881,7 +906,7 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
@@ -893,34 +918,56 @@ pub fn turn_system(
                 spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query); 
         }
         PokerPhase::River => {
             if community_query.iter().count() < 5 {
                 println!("Phase is now in River!");
-                let cards = &mut deck.cards;
-                let flop = deal_com_function(cards, &community_query);
-                spawn_community_cards(&mut commands, flop, &community_query, &sprite_data);
+                if deck.cards.iter().count() != (47 - (player_count.player_count * 2)) {
+                    println!("Hello!");
+                    let cards = &mut deck.cards;
+                    let river = deal_com_function(cards, &community_query);
+                    spawn_community_cards(&mut commands, river, &community_query, &sprite_data);
+                }
             }
             if !current_player_moved {
-                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query);
+                process_player_turn(&mut commands, state.current_player, &mut state, &mut player_entity_query, &player_count, last_action, &mut text_query, &mut community_query, &mut timer_query, &mut deck);
             }
             next_player_turn(&mut state, &mut player_entity_query, player_count.player_count, &mut text_query);
         }
         PokerPhase::Showdown => {
             // Check the winners using poorly named card_function, the players is derived from the Entity Player query and iterated over to just return the players
             // and remove the entities so that player_entity_query can be used in this instance
-            let mut winner = card_function(&community_query, &player_entity_query.iter().map(|(_, player)| player).collect::<Vec<&Player>>());
-
+            
+            let mut winners: Vec<usize> = Vec::new();
+            
             if active_players_count == 1 {
                 for (_, player) in player_entity_query.iter_mut() {
                     if !player.has_folded {
-                        winner = player.player_id;
+                        winners.push(player.player_id);
                     }
                 }
             }
+            else {
+                winners = card_function(
+                    &community_query, 
+                    &player_entity_query.iter()
+                        .filter_map(|(_, player)| {
+                            if !player.has_folded {
+                                Some(player)
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<&Player>>()
+                );
+            }
+            
+            
+
+            
 
             // This is all to reinitialize the cards so another round may begin
             deck.cards = init_cards();
@@ -936,39 +983,41 @@ pub fn turn_system(
             }
 
             for (_, mut player) in player_entity_query.iter_mut() {
-                if winner == 0 {
+                if winners.contains(&player.player_id) {
+                    if winners.iter().count() > 1 {
+                        println!("Player {} ties and gains a pot of {}\n", player.player_id, state.pot/winners.iter().count());
+                        turn_text.sections[0].value = format!("It's a draw!");
+                        player.cash += state.pot/winners.iter().count();
+                    }
+                    else {
+                        println!("Player {} wins and gains a pot of {}\n", player.player_id, state.pot);
+                        player.cash += state.pot;
+                        if player.player_id == 0 {
+                            turn_text.sections[0].value = format!("You won!");
+                        }
+                        else {
+                            turn_text.sections[0].value = format!("AI {} won!", player.player_id);
+                        }
+                    } 
+
                     if player.player_id == 0 {
-                        turn_text.sections[0].value = "You won!".to_string();
-                        turn_text.sections[1].value = String::new();
-                        println!("Player 0 wins and gains a pot of {}\n", state.pot);
-                        player.cash += state.pot;
                         money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
-                        money_text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
                     }
-                } else if winner == 1 {
-                    if player.player_id == 1 {
-                        turn_text.sections[0].value = format!("AI {} won!", player.player_id);
-                        turn_text.sections[1].value = String::new();
-                        println!("Player 1 wins and gains a pot of {}\n", state.pot);
-                        player.cash += state.pot;
-                    }
-                } else {
-                    println!("Player {} ties and gains a pot of {}\n", player.player_id, state.pot/player_count.player_count);
-                    player.cash += state.pot/player_count.player_count;
-                    money_text.sections[0].value = format!("Your Cash: ${}\n", player.cash);
-                    money_text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
+                    turn_text.sections[1].value = format!("");
                 }
            }
+
+            
            
 
             state.pot = 0;
             state.current_top_bet = 0;
-            state.small_blind = (state.small_blind + 1) % player_count.player_count;
-            state.big_blind = (state.big_blind + 1) % player_count.player_count;
-            state.current_player = state.big_blind + 1 % player_count.player_count;
+            
+            //println!("9 Current player is now: {}", state.current_player);
 
             money_text.sections[2].value = format!("Current Pot: ${}\n", 0);
             money_text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
+            money_text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
             //turn_text.sections[0].value = format!("");
             //turn_text.sections[1].value = format!("");
 
@@ -976,15 +1025,115 @@ pub fn turn_system(
                 commands.entity(blind).despawn_recursive();
             }
 
+            let mut invalid_players: Vec<usize> = Vec::new();
+            //let mut valid_players: Vec<usize> = Vec::new();
 
             for (_, mut player) in player_entity_query.iter_mut() {
-                player.has_folded = false;
+                if player.cash > 0 {
+                    player.has_folded = false;
+                }
+                else {
+                    player.has_folded = true;
+                    invalid_players.push(player.player_id);
+                }
                 player.current_bet = 0;
                 player.has_moved = false;
                 player.is_all_in = false;
                 player.has_raised = false;
                 player.small_blind = false;
+                player.big_blind = false;
+    
+                println!("Player {}'s cash: {}", player.player_id, player.cash);
             }
+
+            let mut game_over: bool = false;
+            if invalid_players.iter().count() == player_count.player_count -1 {
+                println!("Only one player with money left game over");
+                let mut game_result = GameResult {
+                    id: 0,
+                };
+
+                for (_, player) in player_entity_query.iter_mut() {
+                    if player.cash != 0 {
+                        game_result.id = player.player_id;
+                    }
+                }
+                commands.insert_resource(game_result);
+                app_state_next_state.set(AppState::GameOver);
+                game_over = true;
+            }
+
+
+            loop {
+                if player_count.player_count > 3 {
+                    if state.small_blind == 2 {
+                        state.small_blind = 0;
+                    }
+                    else if state.small_blind == 0 {
+                        state.small_blind = 3;
+                    }
+                    else if state.small_blind == (player_count.player_count - 1) {
+                        state.small_blind = 1;
+                    }
+                    else {
+                        state.small_blind = (state.small_blind + 1) % player_count.player_count;
+                    }
+                }
+                else {
+                    state.small_blind = (state.small_blind + 1) % player_count.player_count;
+                }
+
+                if !invalid_players.contains(&state.small_blind) {
+                    break;
+                }
+            }
+            println!("small blind: {}", state.small_blind);
+
+            state.big_blind = state.small_blind;
+            loop {
+                if player_count.player_count > 3 {
+                    if state.big_blind == 2 {
+                        state.big_blind = 0;
+                    }
+                    else if state.big_blind == 0 {
+                        state.big_blind = 3;
+                    }
+                    else if state.big_blind == (player_count.player_count - 1) {
+                        state.big_blind = 1;
+                    }
+                    else {
+                        state.big_blind = (state.big_blind + 1) % player_count.player_count;
+                    }
+                }
+                else {
+                    state.big_blind = (state.big_blind + 1) % player_count.player_count;
+                }
+
+                if !invalid_players.contains(&state.big_blind) {
+                    break;
+                }
+            }
+            println!("big blind: {}", state.big_blind);
+
+            if player_count.player_count > 3 {
+                if state.big_blind == 2 {
+                    state.current_player = 0;
+                }
+                else if state.big_blind == 0 {
+                    state.current_player = 3;
+                }
+                else if state.big_blind == (player_count.player_count - 1) {
+                    state.current_player = 1;
+                }
+                else {
+                    state.current_player = (state.big_blind + 1) % player_count.player_count;
+                }
+            }
+            else {
+                state.current_player = (state.big_blind + 1) % player_count.player_count;
+            }
+            println!("Current player: {}", state.current_player);
+
             state.round_started = false;
             state.phase = PokerPhase::PreFlop;
             state.is_first_round = false;
@@ -1003,6 +1152,7 @@ fn next_player_turn(
     let players_moved_count = player_entity_query.iter().filter(|(_entity, player)| player.has_moved && !player.has_folded).count();
 
     let active_players_count = player_entity_query.iter().filter(|(_entity, player)| !player.has_folded).count();
+    let players_no_cash = player_entity_query.iter().filter(|(_entity, player)| player.cash == 0).count();
 
     if players_moved_count == active_players_count && player_entity_query.iter().count() > 0{
         match state.phase {
@@ -1011,6 +1161,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Flop;
                 state.current_top_bet = 0;
@@ -1020,6 +1171,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Turn;
                 state.current_top_bet = 0;
@@ -1029,6 +1181,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::River;
                 state.current_top_bet = 0;
@@ -1038,6 +1191,7 @@ fn next_player_turn(
                     player.has_moved = false;
                     player.current_bet = 0;
                     player.has_raised = false;
+                    println!("Player, {}: {}", player.player_id, player.cards.iter().map(|card| card.to_string()).collect::<Vec<_>>().join(", "));
                 }
                 state.phase = PokerPhase::Showdown;
                 state.current_top_bet = 0;
@@ -1046,8 +1200,13 @@ fn next_player_turn(
         }
         text.sections[1].value = format!("Your Current Bet: ${}\n", 0);
         text.sections[3].value = format!("Current Top Bet: ${}\n", 0);
-
-        state.current_player = (state.big_blind + 1) % _total_players;
+        if(_total_players - players_no_cash == 2) {
+            state.current_player = state.big_blind;
+        }
+        else {
+            state.current_player = state.small_blind;
+        }
+        //println!("10 Current player is now: {}", state.current_player);
     }
 }
 
