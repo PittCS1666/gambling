@@ -96,7 +96,6 @@ pub(super) fn start_screen_update(
                     let mut client=MessageProto::from(main_client);
                     let data=bincode::serialize(&UserOp::CreateLobby(lobby_name.to_string(), code.to_string())).unwrap();
                     client.send(&data);
-                    state.set(AppState::OnlineClient);
                     match client.recv(){
                         Ok(data)=>{
                             let Ok(data)=bincode::deserialize::<OpInfo>(&data) else{
@@ -106,10 +105,9 @@ pub(super) fn start_screen_update(
                             let OpInfo::Success(ip)=data else{
                                 return
                             };
-                            *connect_ip=ip;
+                            *connect_ip=format!("{server_ip}:{ip}");
                             *is_master=true;
                             state.set(AppState::OnlineClient);
-                            return
                             
                         }
                         Err(e)=>{
@@ -151,7 +149,7 @@ pub(super) fn start_screen_update(
                         ui.label(RichText::new(name).size(24.0))
                             .on_hover_text(format!("target:{ip:?}"));
                         if ui.button(RichText::new("Join").size(16.0).weak()).clicked(){
-                            *connect_ip=ip.to_string();
+                            *connect_ip=format!("{server_ip}:{ip}");
                             *is_master=false;
                             state.set(AppState::OnlineClient);
                         }

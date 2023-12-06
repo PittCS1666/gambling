@@ -118,6 +118,7 @@ fn create_center_server(mut command: Commands,option: Res<OptionsResult>,){
                     panic!("happend error:{e:?}");
                 }
             };
+            client.set_nonblocking(false);
             let mut client = MessageProto::from(client);
             
             let data=match client.recv() {
@@ -141,7 +142,7 @@ fn create_center_server(mut command: Commands,option: Res<OptionsResult>,){
                         client.send(&data);
                         continue;
                     };
-                    let data=bincode::serialize(&OpInfo::Success(ip.clone())).expect("serde error!");
+                    let data=bincode::serialize(&OpInfo::Success(ip.split(':').next_back().unwrap().to_string())).expect("serde error!");
                     client.send(&data);
                     server_local.server_list.push((ip.clone(),name,code.clone()));
                     drop(server_local);
@@ -149,7 +150,7 @@ fn create_center_server(mut command: Commands,option: Res<OptionsResult>,){
                 }
                 UserOp::QueryLobby=>{
                     let server=server.lock().unwrap();
-                    let vec:Vec<(String,String)>=server.server_list.iter().map(|i|(i.0.clone(),i.1.clone())).collect();
+                    let vec:Vec<(String,String)>=server.server_list.iter().map(|i|(i.0.split(':').next_back().unwrap().to_string(),i.1.clone())).collect();
                     let data=bincode::serialize(&OpInfo::List(vec)).expect("serde error!");
                     client.send(&data);
                 }
@@ -249,6 +250,7 @@ fn main_server_loop_part1(
                 panic!("happend error:{e:?}");
             }
         };
+        client.set_nonblocking(false);
         sender.send(());
         let main_client = Arc::new(client);
 
@@ -374,15 +376,18 @@ fn handle_connection_1(
                     // Game Exit
                     Message::Close => {
                         let mut users = users.lock().unwrap();
-                        users.retain(|user| user.ip != ip);
+                        
+                        
                         for user in users.iter() {
                             let ip = ip.clone();
                             user.send_message.send(Message::Kick(ip));
                         }
+                        users.retain(|user| user.ip != ip);
                         if users.len()==0{
                             game_global_send.send(GameSignType::Exit);
                             println!("server is not have person,will close");
                         }
+                        
                         drop(users);
                         println!("user exit");
                         return;
@@ -422,12 +427,18 @@ fn handle_connection_1(
             }
             Err(_e) => {
                 let mut users = users.lock().unwrap();
-                users.retain(|user| user.ip != ip);
+                
                 for user in users.iter() {
                     let ip = ip.clone();
                     user.send_message.send(Message::Kick(ip));
                 }
+                users.retain(|user| user.ip != ip);
+                if users.len()==0{
+                    game_global_send.send(GameSignType::Exit);
+                    println!("server is not have person,will close");
+                }
                 drop(users);
+                
                 println!("user exit");
                 return;
             }

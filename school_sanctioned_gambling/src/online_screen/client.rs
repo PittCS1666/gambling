@@ -60,7 +60,8 @@ fn create_client(
     let code = interaction.code.clone();
     let name = interaction.name.clone();
     let users = users.users.clone();
-    let (sd, mut rv) = std::sync::mpsc::channel();
+    users.lock().unwrap().clear();
+    let (sd, rv) = std::sync::mpsc::channel();
     let g_next_state = Arc::new(Mutex::new(AppState::OnlineClient));
     let next_state = g_next_state.clone();
     let (send_message_1, mut recever_message_1) = std::sync::mpsc::channel();
@@ -80,6 +81,7 @@ fn create_client(
         let main_client=Arc::new(main_client);
         // the first read to use verify
         let mut client = MessageProto::from(main_client.as_ref());
+
         let data: Vec<u8> = bincode::serialize(&NetConnect { name, code }).unwrap();
         client.send(&data);
 
@@ -191,7 +193,7 @@ fn handle_connection(
     });
     
     thread::spawn(move||{
-        while let Some(message)=rv.recv().unwrap(){
+        while let Ok(Some(message))=rv.recv(){
             let mut stream=MessageProto::from(stream_main.as_ref());
             let encoded: Vec<u8>=bincode::serialize(&message).expect("serde error!");
             stream.send(&encoded);
