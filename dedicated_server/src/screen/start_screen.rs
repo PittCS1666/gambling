@@ -31,18 +31,6 @@ pub(super) fn start_screen_update(
                     state.set(AppState::ServerRunning);
                 }
                 ui.end_row();
-
-                ui.label(RichText::new("Server IP").size(16.0));
-                ui.add(egui::TextEdit::singleline(server_ip).min_size(Vec2::new(128.0, 16.0)))
-                    .on_hover_text(
-                        "if you are client please write you connect ip and port,else write bind ip",
-                    );
-                ui.end_row();
-
-                ui.label(RichText::new("Code").size(16.0));
-                ui.add(egui::TextEdit::singleline(code).min_size(Vec2::new(128.0, 16.0)))
-                    .on_hover_text("Please write connect code");
-                ui.end_row();
                 if ui
                     .button(RichText::new("back options").size(16.0))
                     .clicked()

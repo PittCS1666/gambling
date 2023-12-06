@@ -13,8 +13,17 @@ pub struct GameInteraction {
     pub code: String,
     /// this is your name
     pub name: String,
+    /// is lobby master
+    pub is_master:bool,
+    /// connect ip
+    pub connect_ip:String,
+    /// lobby name
+    pub lobby_name:String,
 }
-
+#[derive(Resource)]
+pub struct ServerList{
+    pub list:Vec<(String,String)>,
+}
 #[derive(Resource)]
 pub struct UserOperater{
     /// when ui get message,it will call send_message function
@@ -25,9 +34,12 @@ pub struct UserOperater{
 impl Default for GameInteraction {
     fn default() -> Self {
         GameInteraction {
-            server_ip: "127.0.0.1:3000".to_string(),
+            server_ip: "127.0.0.1".to_string(),
             code: "TEST".to_string(),
             name: "XX".to_string(),
+            is_master:false,
+            connect_ip:String::new(),
+            lobby_name:"TEST".to_string(),
         }
     }
 }
@@ -59,7 +71,7 @@ pub enum Message {
 #[derive(Resource)]
 pub struct GameSigned {
     /// if it is false,server will close
-    pub sd: std::sync::mpsc::Sender<()>,
+    pub sd: std::sync::mpsc::Sender<Option<Message>>,
 
     /// next state
     pub next_state: Arc<Mutex<AppState>>,

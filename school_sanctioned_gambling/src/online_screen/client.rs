@@ -48,17 +48,19 @@ enum NetReceiver {
     Full
 }
 
+
+
 /// when game on enter lobby,create server
 fn create_client(
     mut command: Commands,
     interaction: Res<GameInteraction>,
     users: Res<Users>,
 ) {
-    let server_ip = interaction.server_ip.clone();
+    let server_ip = interaction.connect_ip.clone();
     let code = interaction.code.clone();
     let name = interaction.name.clone();
     let users = users.users.clone();
-    let (sd, mut rv) = std::sync::mpsc::channel::<()>();
+    let (sd, mut rv) = std::sync::mpsc::channel();
     let g_next_state = Arc::new(Mutex::new(AppState::OnlineClient));
     let next_state = g_next_state.clone();
     let (send_message_1, mut recever_message_1) = std::sync::mpsc::channel();
@@ -116,7 +118,7 @@ fn create_client(
 fn handle_connection(
     stream_main: Arc<TcpStream>,
     users: Arc<Mutex<Vec<UserInfo>>>,
-    rv: std::sync::mpsc::Receiver<()>,
+    rv: std::sync::mpsc::Receiver<Option<Message>>,
     recv_message_1:std::sync::mpsc::Receiver<Message>,
     send_message_2:std::sync::mpsc::Sender<Message>,
     state:Arc<Mutex<AppState>>,
@@ -189,7 +191,11 @@ fn handle_connection(
     });
     
     thread::spawn(move||{
-        rv.recv();
+        while let Some(message)=rv.recv().unwrap(){
+            let mut stream=MessageProto::from(stream_main.as_ref());
+            let encoded: Vec<u8>=bincode::serialize(&message).expect("serde error!");
+            stream.send(&encoded);
+        }
         stream_main.shutdown(std::net::Shutdown::Both);
         users2.lock().unwrap().clear();
         *state2.lock().unwrap()=AppState::OnlineEnd;

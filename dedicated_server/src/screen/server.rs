@@ -1,4 +1,6 @@
+use std::collections::LinkedList;
 use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
@@ -16,7 +18,7 @@ pub struct ServerPlugin;
 
 impl Plugin for ServerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AppState::ServerRunning), create_server)
+        app.add_systems(OnEnter(AppState::ServerRunning), create_center_server)
             // tell thread clear
             .add_systems(
                 OnEnter(AppState::GameEnd),
@@ -26,6 +28,7 @@ impl Plugin for ServerPlugin {
                     signed.sd.send(GameSignType::End);
                     thread::sleep(Duration::from_millis(100));
                     command.remove_resource::<GameSigned>();
+                    command.remove_resource::<GlobalServerLists>();
                     state.set(AppState::StartScreen)
                 },
             );
@@ -44,25 +47,138 @@ enum NetReceiver {
     Failed,
     Full,
 }
+
+#[derive(Serialize)]
+enum OpInfo{
+    /// create lobby success,return server ip
+    Success(String),
+    /// create lobby failed
+    Failed,
+    /// query lobby list.first is ip,second is name
+    List(Vec<(String,String)>)
+}
+#[derive(Deserialize,Debug)]
+enum UserOp{
+    /// the first is lobby name,the second is lobby code
+    CreateLobby(String,String),
+    QueryLobby,
+}
+
+#[derive(Clone)]
+struct ServerLists{
+    /// this is free ip
+    allow_server_list:LinkedList<String>,
+    /// the first is server ip,the second is server name,the third is server code
+    server_list:Vec<(String,String,String)>,
+}
+#[derive(Resource,Clone)]
+struct GlobalServerLists{
+    server_lists:Arc<Mutex<ServerLists>>
+}
+impl Default for ServerLists{
+    fn default() -> Self {
+        let mut allow_server_list=LinkedList::new();
+        for port in 3001..6000{
+            allow_server_list.push_back(format!("0.0.0.0:{port}"));
+        }
+        
+        Self { allow_server_list, server_list: Default::default() }
+    }
+}
+
+fn create_center_server(mut command: Commands,option: Res<OptionsResult>,){
+    let (sd, rx) = std::sync::mpsc::channel();
+    let server=Arc::new(Mutex::new(ServerLists::default()));
+    let server_lists=server.clone();
+    command.insert_resource(GlobalServerLists{server_lists});
+    command.insert_resource(GameSigned { sd });
+    let number_player=option.num_players;
+    let linstener_main=Arc::new(std::net::TcpListener::bind("0.0.0.0:3000").unwrap());
+    linstener_main.set_nonblocking(true);
+    let stop_signal = Arc::new(AtomicBool::new(false));
+    
+    let signed=stop_signal.clone();
+    let linstener=linstener_main.clone();
+    
+    thread::spawn(move ||{
+        
+        loop{
+            if signed.load(Ordering::SeqCst) {
+                break;
+            }
+            
+            let client = linstener.accept();
+            let (client, ipaddr) = match client {
+                Ok(s) => s,
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    
+                    continue
+                },
+                Err(e) => {
+                    panic!("happend error:{e:?}");
+                }
+            };
+            let mut client = MessageProto::from(client);
+            
+            let data=match client.recv() {
+                Ok(data) => {
+                    let Ok(data) = bincode::deserialize::<UserOp>(&data) else {
+                        println!("data error!");
+                        continue;
+                    };
+                    data
+                }
+                Err(e) => {
+                    println!("{e}");
+                    continue;
+                }
+            };
+            match data{
+                UserOp::CreateLobby(name,code)=>{
+                    let mut server_local=server.lock().unwrap();
+                    let Some(ip)=server_local.allow_server_list.pop_back()else{
+                        let data=bincode::serialize(&OpInfo::Failed).expect("serde error!");
+                        client.send(&data);
+                        continue;
+                    };
+                    let data=bincode::serialize(&OpInfo::Success(ip.clone())).expect("serde error!");
+                    client.send(&data);
+                    server_local.server_list.push((ip.clone(),name,code.clone()));
+                    drop(server_local);
+                    create_server(server.clone(),ip.clone(),code.clone(),number_player);
+                }
+                UserOp::QueryLobby=>{
+                    let server=server.lock().unwrap();
+                    let vec:Vec<(String,String)>=server.server_list.iter().map(|i|(i.0.clone(),i.1.clone())).collect();
+                    let data=bincode::serialize(&OpInfo::List(vec)).expect("serde error!");
+                    client.send(&data);
+                }
+            }
+        }
+    });
+    thread::spawn(move||{
+        // exit server running
+        
+        rx.recv();
+        stop_signal.store(true, Ordering::SeqCst);
+
+    });
+}
 /// when game on enter lobby,create server
 fn create_server(
-    mut command: Commands,
-    interaction: Res<GameInteraction>,
-    users: Res<Users>,
-    option: Res<OptionsResult>,
+    server_list:Arc<Mutex<ServerLists>>,
+    server_ip:String,
+    server_code:String,
+    num_players:usize,
 ) {
-    let server_ip = interaction.server_ip.clone();
-    let interaction_code = interaction.code.clone();
-    let num_players = option.num_players;
     let (sd, rx) = std::sync::mpsc::channel();
-    let sd_new=sd.clone();
-    command.insert_resource(GameSigned { sd });
-    let users = users.users.clone();
-    main_server_loop(server_ip, interaction_code, users, num_players, sd_new,rx);
+    let users =Arc::new(Mutex::new(Vec::new()));
+    main_server_loop(server_list,server_ip, server_code, users, num_players, sd,rx);
 }
 
 /// main server loop,will create thread:`main_server_loop_part1`,`main_server_loop_part2`
 fn main_server_loop(
+    server_list:Arc<Mutex<ServerLists>>,
     server_ip: String,
     interaction_code: String,
     users: Arc<Mutex<Vec<User>>>,
@@ -70,17 +186,21 @@ fn main_server_loop(
     sd:Sender<GameSignType>,
     rx: Receiver<GameSignType>,
 ) {
-    let listener = Arc::new(std::net::TcpListener::bind(server_ip).unwrap());
+    let listener = Arc::new(std::net::TcpListener::bind(server_ip.clone()).unwrap());
+    listener.set_nonblocking(true);
+    let stop_signal = Arc::new(AtomicBool::new(false));
     let interaction_code = Arc::new(interaction_code);
     let my_local_ip = local_ip().unwrap();
     let users_1 = users.clone();
     let listener_1 = listener.clone();
     let (send_wait,recv_wait)=std::sync::mpsc::channel::<()>();
     println!("You created a server with IP {:?}", my_local_ip);
+    let send_2=sd.clone();
     thread::spawn(move||{
         loop{
+
             match recv_wait.recv_timeout(Duration::from_secs(120)){
-                _=>{}
+                Ok(())=>{}
                 Err(e) if e==mpsc::RecvTimeoutError::Timeout=>{
                     println!("wait time over 120s!");
                     break
@@ -90,14 +210,15 @@ fn main_server_loop(
                     break
                 }
             }
-            sd.send(GameSignType::Exit);
         }
+        send_2.send(GameSignType::Exit);
+    });
+    let signed=stop_signal.clone();
+    thread::spawn(move || {
+        main_server_loop_part1(signed,listener, interaction_code, users, num_players,send_wait,sd);
     });
     thread::spawn(move || {
-        main_server_loop_part1(listener, interaction_code, users, num_players,send_wait);
-    });
-    thread::spawn(move || {
-        main_server_loop_part2(listener_1, users_1, rx);
+        main_server_loop_part2(server_list,server_ip,listener_1, users_1, rx,stop_signal);
     });
 }
 
@@ -105,23 +226,30 @@ fn main_server_loop(
 /// 
 /// the function will wait user connect
 fn main_server_loop_part1(
+    signed:Arc<AtomicBool>,
     listener: Arc<TcpListener>,
     interaction_code: Arc<String>,
     users: Arc<Mutex<Vec<User>>>,
     num_players: usize,
-    sender:std::sync::mpsc::Sender<()>
+    sender:std::sync::mpsc::Sender<()>,
+    game_global_send:Sender<GameSignType>,
 ) {
     
     loop {
+        let game_global_send=game_global_send.clone();
+        if signed.load(Ordering::SeqCst) {
+            break;
+        }
         let client = listener.accept();
-        sender.send(());
+        
         let (client, ipaddr) = match client {
             Ok(s) => s,
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
             Err(e) => {
                 panic!("happend error:{e:?}");
             }
         };
+        sender.send(());
         let main_client = Arc::new(client);
 
         let mut client = MessageProto::from(main_client.as_ref());
@@ -185,7 +313,7 @@ fn main_server_loop_part1(
         let ip3 = ip2.clone();
         let usersn = users.clone();
         thread::spawn(move || {
-            handle_connection_1(main_client, users, ip2, sender);
+            handle_connection_1(main_client, users, ip2, sender,game_global_send,num_players);
         });
         thread::spawn(move || handle_connection_2(main_client_1, recever, ip3, usersn));
 
@@ -194,22 +322,29 @@ fn main_server_loop_part1(
 
 /// this is message loop
 fn main_server_loop_part2(
+    server_list:Arc<Mutex<ServerLists>>,
+    server_ip:String,
     listener: Arc<TcpListener>,
     users: Arc<Mutex<Vec<User>>>,
     rx: Receiver<GameSignType>,
+    signed:Arc<AtomicBool>,
 ) {
     let game_message = rx.recv().unwrap();
-    listener.set_nonblocking(true).expect("setting error!");
+    
     if game_message == GameSignType::Start {
         // continue wait
         let game_message = rx.recv().unwrap();
     }
+    signed.store(true, Ordering::SeqCst);
     let mut users = users.lock().unwrap();
     for user in users.iter() {
         user.send_message.send(Message::Close);
     }
     users.clear();
     drop(users);
+    let mut server_list=server_list.lock().unwrap();
+    server_list.server_list.retain(|(ip,..)|ip!=&server_ip);
+    server_list.allow_server_list.push_back(server_ip);
 }
 
 /// loop for `TcpStream` await
@@ -226,6 +361,8 @@ fn handle_connection_1(
     users: Arc<Mutex<Vec<User>>>,
     ip: String,
     sender: mpsc::Sender<Message>,
+    game_global_send:Sender<GameSignType>,
+    num_players: usize,
 ) {
     let mut stream = MessageProto::from(stream.as_ref());
     loop {
@@ -242,10 +379,32 @@ fn handle_connection_1(
                             let ip = ip.clone();
                             user.send_message.send(Message::Kick(ip));
                         }
+                        if users.len()==0{
+                            game_global_send.send(GameSignType::Exit);
+                            println!("server is not have person,will close");
+                        }
                         drop(users);
                         println!("user exit");
                         return;
                     }
+                    // Game Start
+                    Message::Start=>{
+                        let users=users.lock().unwrap();
+                        if users.len()<num_players{
+                            continue;
+                        }
+                        users.iter().for_each(|e| {
+                            e.send_message.send(Message::Start);
+                        });
+                        game_global_send.send(GameSignType::Start);
+                    }
+                    // Kick User
+                    Message::Kick(ip)=>{
+                        users.lock().unwrap().iter().for_each(|e| {
+                            e.send_message.send(Message::Kick(ip.to_string()));
+                        });
+                    }
+
                     // oprate
                     Message::Raise(_) | Message::Call | Message::Fold | Message::Check => {
                         let users = users.lock().unwrap();
