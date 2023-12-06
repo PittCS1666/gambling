@@ -1,4 +1,4 @@
-use crate::{game::components::Player, options::components::OptionsResult};
+use crate::{ options::components::OptionsResult};
 
 use super::{AppState, Message, UiInfo, UiInfoString, User, UserInfo, Users};
 use bevy::prelude::*;
@@ -8,7 +8,7 @@ pub(super) fn running_screen_update(
     mut contexts: EguiContexts,
     mut state: ResMut<NextState<AppState>>,
     users: Res<Users>,
-    players: &mut Query<(Entity, &mut Player)>,
+    // players: &mut Query<(Entity, &mut Player)>,
     ui_info: ResMut<UiInfo>,
     option: Res<OptionsResult>,
 ) {

@@ -1,4 +1,3 @@
-mod game_in;
 pub mod resource;
 mod running_screen;
 pub mod sd;

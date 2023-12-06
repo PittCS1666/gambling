@@ -1,16 +1,16 @@
 use super::cards::*;
 use super::components::*;
-
+use crate::game;
 use crate::AppState;
 use bevy::prelude::*;
-
-
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
 use serde_json::*;
 use std::fs::File;
 use std::io::prelude::*;
 
 pub fn spawn_option_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-    let button_texts = ["Check", "Call", "Raise", "Fold"];
+    let button_texts = vec!["Check", "Call", "Raise", "Fold"];
     let button_width = 150.0;
     let button_spacing = 10.0;
 
@@ -177,7 +177,7 @@ pub fn save_buton_interaction(
     state: ResMut<PokerTurn>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     player_count: ResMut<NumPlayers>,
-    deck: ResMut<Deck>,
+    mut deck: ResMut<Deck>,
 ) {
     for (interaction, mut color, mut border_color) in &mut interaction_query {
         match *interaction {
@@ -216,6 +216,7 @@ pub fn save_buton_interaction(
                     small_blind_val: state.small_blind_val,
                     big_blind_val: state.big_blind_val,
                     is_first_round: state.is_first_round,
+                    all_last_move: state.all_last_move.clone(),
                 };
 
                 let state_to_save = to_string(&cur_state).unwrap();
@@ -231,7 +232,7 @@ pub fn save_buton_interaction(
                     };
                     cards.push(card);
                 }
-                let cur_deck = Deck { cards };
+                let cur_deck = Deck { cards: cards };
                 let deck_to_save = to_string(&cur_deck).unwrap();
                 writeln!(game_file, "{}", deck_to_save).expect("could not write to file");
 
@@ -300,7 +301,6 @@ pub fn raise_button_interaction(
                             if let Ok(parsed_value) = text.sections[0].value.parse::<usize>() {
                                 if parsed_value > 0 {
                                     state.current_top_bet += parsed_value;
-                                    println!("Current top bet is now: ${}", state.current_top_bet);
                                     last_action.action = Some(PlayerAction::Raise);
                                 } else {
                                     println!("Have to raise by more than 0!");

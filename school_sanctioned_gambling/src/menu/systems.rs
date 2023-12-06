@@ -7,7 +7,7 @@ pub fn load_menu(
     asset_server: Res<AssetServer>,
     camera_query: Query<Entity, With<Camera>>,
 ) {
-    if camera_query.iter().next().is_none() {
+    if !(camera_query.iter().next().is_some()) {
         commands.spawn(Camera2dBundle::default()).insert(Camera);
     }
     spawn_background(&mut commands, &asset_server);

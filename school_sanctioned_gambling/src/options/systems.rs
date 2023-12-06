@@ -9,10 +9,11 @@ pub fn load_options(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_ui(&mut commands, &asset_server);
     let results = OptionsResult {
         money_per_player: 500,
-        small_blind_amount: 25,
-        big_blind_amount: 50,
+        small_blind_amount: 5,
+        big_blind_amount: 10,
         num_players: 2,
         is_loaded_game: false,
+        ai_type: 0,
     }; // these are gonna be the defaults I guess
     commands.insert_resource(results);
 }
@@ -75,8 +76,8 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
             // do all the text boxes
             let mut counter = 1;
             for label in [
-                "small blind amount (default=25): ",
-                "big blind amount (default=50): ",
+                "small blind amount (default=5): ",
+                "big blind amount (default=10): ",
                 "starting money per player (default=500): ",
                 "number of players (2-6) (default=2): ",
             ] {
@@ -126,6 +127,96 @@ fn spawn_ui(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     });
                 counter += 1;
             }
+
+            parent
+            .spawn(NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            })
+            .with_children(|parent| {
+                // AI Difficulty Title
+                parent.spawn(TextBundle::from_section(
+                    "AI Difficulty",
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 30.0,
+                        color: Color::BLACK,
+                    },
+                ));
+
+                // Easy AI Button
+                parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Easy",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(EasyAiButton);
+
+                // Hard AI Button
+                parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Hard",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(HardAiButton);
+
+                    parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            width: Val::Px(150.0),
+                            height: Val::Px(40.0),
+                            margin: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .with_children(|parent| {
+                        parent.spawn(TextBundle::from_section(
+                            "Cheating",
+                            TextStyle {
+                                font: asset_server.load("fonts/Lato-Black.ttf"),
+                                font_size: 20.0,
+                                color: Color::BLACK,
+                            },
+                        ));
+                    })
+                    .insert(CheatingAiButton);
+                });
 
             // spawn local game button
             parent
@@ -220,7 +311,7 @@ pub fn play_button_interaction(
                 for (ent, input) in &text_ent_query {
                     for descendant in children_query.iter_descendants(ent) {
                         if let Ok(text) = text_query.get_mut(descendant) {
-                            if text.sections[0].value.is_empty() {
+                            if text.sections[0].value == "" {
                                 continue;
                             }
                             let value = text.sections[0].value.parse::<usize>().unwrap(); // should never panic
@@ -271,6 +362,7 @@ pub fn play_button_interaction(
                     results.big_blind_amount = results_clone.big_blind_amount;
                     results.money_per_player = results_clone.money_per_player;
                     results.num_players = results_clone.num_players;
+                    results.ai_type = results_clone.ai_type;
                 } else {
                     // progress to next screen with given options
                     app_state_next_state.set(AppState::LocalPlay);
@@ -288,14 +380,82 @@ pub fn play_button_interaction(
     }
 }
 
+pub fn easy_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<EasyAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Easy {
+            ai_button_state.selected = AiSelection::Easy;
+            results.ai_type = 0;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Easy });
+        }
+    }
+}
+
+pub fn hard_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<HardAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Hard {
+            ai_button_state.selected = AiSelection::Hard;
+            results.ai_type = 1;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Hard });
+        }
+    }
+}
+
+pub fn cheating_button_interaction(
+    mut interaction_query: Query<(&Interaction, Entity), (Changed<Interaction>, With<CheatingAiButton>)>,
+    mut button_press_event_writer: EventWriter<ButtonPressEvent>,
+    mut ai_button_state: ResMut<AiButtonState>,
+    mut results: ResMut<OptionsResult>,
+) {
+    for (interaction, _) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed && ai_button_state.selected != AiSelection::Cheating {
+            ai_button_state.selected = AiSelection::Cheating;
+            results.ai_type = 2;
+            button_press_event_writer.send(ButtonPressEvent { button_type: AiSelection::Cheating });
+        }
+    }
+}
+
+pub fn update_button_colors(
+    mut button_query: Query<(
+        Entity, 
+        &mut BackgroundColor, 
+        Option<&EasyAiButton>, 
+        Option<&HardAiButton>,
+        Option<&CheatingAiButton>,
+    )>,
+    ai_button_state: Res<AiButtonState>,
+) {
+    for (_entity, mut background_color, easy_button, hard_button, cheating_button) in button_query.iter_mut() {
+        if easy_button.is_some() && ai_button_state.selected == AiSelection::Easy {
+            *background_color = Color::RED.into();
+        } else if hard_button.is_some() && ai_button_state.selected == AiSelection::Hard {
+            *background_color = Color::RED.into();
+        } else if cheating_button.is_some() && ai_button_state.selected == AiSelection::Cheating {
+            *background_color = Color::RED.into();
+        } else {
+            // If the entity is one of the buttons, but not currently selected
+            if easy_button.is_some() || hard_button.is_some() || cheating_button.is_some() {
+                *background_color = Color::rgb(0.071, 0.141, 0.753).into();
+            }
+        }
+    }
+}
+
 pub fn load_button_interaction(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<LoadButton>),
     >,
-    _text_query: Query<&mut Text, With<TextBoxTag>>,
-    _text_ent_query: Query<(Entity, &TextBox)>,
-    _children_query: Query<&Children>,
     mut app_state_next_state: ResMut<NextState<AppState>>,
     mut results: ResMut<OptionsResult>,
 ) {
@@ -395,7 +555,7 @@ pub fn make_scrolly(mut commands: Commands, query: Query<(Entity, &TextBox), Add
                     ..default()
                 },
                 TextBoxTag {
-                    id: textbox.id,
+                    id: textbox.id.clone(),
                 },
             ))
             .id();

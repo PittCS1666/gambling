@@ -1,6 +1,50 @@
+
 use super::{AppState, UserInfo, Users, GameSigned, GameInteraction};
 use bevy::prelude::*;
 use bevy_egui::{egui::RichText, *};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufRead, BufReader, Write};
+use std::path::Path;
+
+const leaderboard_path: &str = "assets/leaderboard.txt";
+
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
+struct LeaderboardEntry {
+    name: String,
+    score: u32,
+}
+
+impl LeaderboardEntry {
+    fn new(name: String, score: u32) -> Self {
+        LeaderboardEntry { name, score }
+    }
+}
+
+fn read_leaderboard() -> io::Result<Vec<LeaderboardEntry>>
+{
+    let file = File::open(leaderboard_path)?;
+    let reader = BufReader::new(file);
+    let mut leaderboard = Vec::new();
+
+    for line in reader.lines() {
+        let s = line?;
+        let parts: Vec<&str> = s.split(',').collect();
+
+        let name = parts[0].trim().to_string();
+        let score: u32 = parts[1].trim().parse().unwrap_or(0);
+
+        let entry = LeaderboardEntry::new(name, score);
+        leaderboard.push(entry);
+    }
+
+    // Last step is to sort based on "score" member variable
+    leaderboard.sort_by(|a: &LeaderboardEntry, b: &LeaderboardEntry| a.score.cmp(&b.score));
+    leaderboard.reverse();
+
+    Ok(leaderboard)
+}
+
+
 
 /// wait screen every second update
 pub(super) fn wait_screen_update(
@@ -25,6 +69,18 @@ egui::TopBottomPanel::top("hall").show(contexts.ctx_mut(), |ui| {
             if ui.button(RichText::new("Back").size(16.0)).clicked() {
     
                 signed.sd.send(None);
+
+                // Printing out the leaderboard of this server
+        match read_leaderboard() {
+            Ok(data) => {
+                for entry in data
+                {
+                    let s = format!("Player: {}, Chip Score: {}", entry.name, entry.score);
+                    ui.label(egui::RichText::new(s).size(15.0).strong());
+                }
+            }
+            Err(err) => {}
+        }
             }
             
         });
