@@ -1,17 +1,17 @@
+// #![feature(trivial_bounds)]
 use bevy::{prelude::*, window::PresentMode};
 
 mod credits;
 mod game;
 mod game_over;
 mod menu;
-mod networking;
+
 mod online_screen;
 mod options;
 use credits::*;
 use game::*;
 use game_over::*;
 use menu::*;
-use networking::*;
 use online_screen::*;
 use options::*;
 

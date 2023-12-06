@@ -7,7 +7,7 @@ pub(crate) use super::AppState;
 use bevy::prelude::*;
 use bevy_egui::*;
 pub(crate) use resource::{GameInteraction, GameSigned, Message, UserInfo, Users};
-pub use sd::S2D;
+
 pub struct OnlineScreenPlugin;
 
 impl Plugin for OnlineScreenPlugin {
