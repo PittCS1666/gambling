@@ -1,30 +1,19 @@
 use super::components::*;
+use crate::game::components::GameResult;
 use crate::AppState;
 use bevy::prelude::*;
 
 pub fn load_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    camera_query: Query<Entity, With<Camera>>,
+    game_result: Res<GameResult>,
 ) {
-    if camera_query.iter().next().is_none() {
-        commands.spawn(Camera2dBundle::default()).insert(Camera);
-    }
-    spawn_background(&mut commands, &asset_server);
-    spawn_buttons(&mut commands, &asset_server);
-}
+    let result: String = if game_result.id == 0 {
+        "You Won!".to_string()
+    } else {
+        "You Lost!".to_string()
+    };
 
-fn spawn_background(commands: &mut Commands, asset_server: &Res<AssetServer>) {
-    commands
-        .spawn(SpriteBundle {
-            texture: asset_server.load("main_menu.png"),
-            transform: Transform::from_xyz(0., 0., 1.),
-            ..default()
-        })
-        .insert(Menu);
-}
-
-fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
     commands
         .spawn(NodeBundle {
             style: Style {
@@ -37,7 +26,23 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         })
         .insert(NBundle)
         .with_children(|parent| {
-            //spawn local game button
+            parent.spawn(TextBundle {
+                text: Text::from_section(
+                    result,
+                    TextStyle {
+                        font: asset_server.load("fonts/Lato-Black.ttf"),
+                        font_size: 80.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                ),
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(100.),
+                    ..default()
+                },
+                ..default()
+            });
+
             parent
                 .spawn(ButtonBundle {
                     style: Style {
@@ -59,10 +64,10 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
                     ..default()
                 })
-                .insert(LocalButton)
+                .insert(PlayAgainButton)
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
-                        "Local Game",
+                        "Play Again",
                         TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
                             font_size: 40.0,
@@ -71,7 +76,6 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     ));
                 });
 
-            //spawn the online game button
             parent
                 .spawn(ButtonBundle {
                     style: Style {
@@ -93,44 +97,10 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
                     background_color: Color::rgb(0.071, 0.141, 0.753).into(),
                     ..default()
                 })
-                .insert(OnlineButton)
-                .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        "Online Game",
-                        TextStyle {
-                            font: asset_server.load("fonts/Lato-Black.ttf"),
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
-                        },
-                    ));
-                });
-
-            //spawn exit button
-            parent
-                .spawn(ButtonBundle {
-                    style: Style {
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(550.),
-                        width: Val::Px(230.0),
-                        height: Val::Px(90.0),
-                        border: UiRect::all(Val::Px(3.0)),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
-                        // center the button within its parent container
-                        align_self: AlignSelf::Center,
-                        justify_self: JustifySelf::Center,
-                        ..default()
-                    },
-                    border_color: BorderColor(Color::BLACK),
-                    background_color: Color::rgb(0.071, 0.141, 0.753).into(),
-                    ..default()
-                })
                 .insert(ExitButton)
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
-                        "Exit",
+                        "Exit To Menu",
                         TextStyle {
                             font: asset_server.load("fonts/Lato-Black.ttf"),
                             font_size: 40.0,
@@ -141,22 +111,15 @@ fn spawn_buttons(commands: &mut Commands, asset_server: &Res<AssetServer>) {
         });
 }
 
-pub fn tear_down_menu(
-    mut commands: Commands,
-    mut menu_query: Query<Entity, With<Menu>>,
-    mut node_query: Query<Entity, With<NBundle>>,
-) {
-    let menu = menu_query.single_mut();
-    commands.entity(menu).despawn_recursive();
-
+pub fn tear_down_screen(mut commands: Commands, mut node_query: Query<Entity, With<NBundle>>) {
     let node = node_query.single_mut();
     commands.entity(node).despawn_recursive();
 }
 
-pub fn local_button_interaction(
+pub fn play_again_interaction(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<LocalButton>),
+        (Changed<Interaction>, With<PlayAgainButton>),
     >,
     mut app_state_next_state: ResMut<NextState<AppState>>,
 ) {
@@ -165,7 +128,7 @@ pub fn local_button_interaction(
             Interaction::Pressed => {
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
                 border_color.0 = Color::RED;
-                app_state_next_state.set(AppState::Options);
+                app_state_next_state.set(AppState::ServerRunning);
             }
             Interaction::Hovered => {
                 *color = Color::rgb(0.133, 0.188, 0.659).into();
@@ -179,33 +142,7 @@ pub fn local_button_interaction(
     }
 }
 
-pub fn online_button_interaction(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor),
-        (Changed<Interaction>, With<OnlineButton>),
-    >,
-    mut app_state_next_state: ResMut<NextState<AppState>>,
-) {
-    for (interaction, mut color, mut border_color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = Color::rgb(0.075, 0.118, 0.502).into();
-                border_color.0 = Color::RED;
-                app_state_next_state.set(AppState::OnlinePlay);
-            }
-            Interaction::Hovered => {
-                *color = Color::rgb(0.133, 0.188, 0.659).into();
-                border_color.0 = Color::WHITE;
-            }
-            Interaction::None => {
-                *color = Color::rgb(0.071, 0.141, 0.753).into();
-                border_color.0 = Color::BLACK;
-            }
-        }
-    }
-}
-
-pub fn exit_button_interaction(
+pub fn main_menu_interaction(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<ExitButton>),
@@ -217,7 +154,7 @@ pub fn exit_button_interaction(
             Interaction::Pressed => {
                 *color = Color::rgb(0.075, 0.118, 0.502).into();
                 border_color.0 = Color::RED;
-                app_state_next_state.set(AppState::Credits);
+                app_state_next_state.set(AppState::GameOptions);
             }
             Interaction::Hovered => {
                 *color = Color::rgb(0.133, 0.188, 0.659).into();
